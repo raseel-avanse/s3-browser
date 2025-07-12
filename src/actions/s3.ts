@@ -1,6 +1,6 @@
 'use server';
 
-import { S3Client, ListObjectsV2Command, GetObjectCommand, ListObjectsV2CommandOutput } from "@aws-sdk/client-s3";
+import { S3Client, ListObjectsV2Command, GetObjectCommand, ListObjectsV2CommandOutput, _Object } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { z } from "zod";
 import type { S3ClientConfig } from "@aws-sdk/client-s3";
@@ -115,6 +115,69 @@ export async function getFolderContentsAsZip(config: Bucket, prefix: string): Pr
         continuationToken = response.NextContinuationToken;
     } while (continuationToken);
 
+    const content = await zip.generateAsync({ type: "base64" });
+    return content;
+}
+
+async function fetchAllObjectKeys(s3Client: S3Client, bucket: string, prefix: string): Promise<_Object[]> {
+    let allObjects: _Object[] = [];
+    let continuationToken: string | undefined = undefined;
+
+    do {
+        const command = new ListObjectsV2Command({
+            Bucket: bucket,
+            Prefix: prefix,
+            ContinuationToken: continuationToken,
+        });
+        const response: ListObjectsV2CommandOutput = await s3Client.send(command);
+        if (response.Contents) {
+            allObjects = allObjects.concat(response.Contents);
+        }
+        continuationToken = response.NextContinuationToken;
+    } while (continuationToken);
+
+    return allObjects;
+}
+
+export async function getItemsAsZip(config: Bucket, items: {key: string, type: 'file' | 'folder'}[]): Promise<string> {
+    const s3Client = getS3Client(config);
+    const zip = new JSZip();
+
+    // Find the common base path for all selected items
+    const allPaths = items.map(item => item.key);
+    const commonPrefix = allPaths.reduce((a, b) => {
+        let i = 0;
+        while (i < a.length && a[i] === b[i]) i++;
+        return a.substring(0, i);
+    }).replace(/[^/]*$/, ''); // a.k.a dirname
+
+    for (const item of items) {
+        if (item.type === 'folder') {
+            const objectsInFolder = await fetchAllObjectKeys(s3Client, config.bucket, item.key);
+            for (const obj of objectsInFolder) {
+                 if (obj.Key && obj.Size! > 0) {
+                    const getObjectCmd = new GetObjectCommand({ Bucket: config.bucket, Key: obj.Key });
+                    const objectResponse = await s3Client.send(getObjectCmd);
+                    if (objectResponse.Body) {
+                        const buffer = await streamToBuffer(objectResponse.Body as ReadableStream);
+                        const zipPath = obj.Key.replace(commonPrefix, '');
+                        zip.file(zipPath, buffer);
+                    }
+                }
+            }
+        } else { // It's a file
+            if (item.key) {
+                const getObjectCmd = new GetObjectCommand({ Bucket: config.bucket, Key: item.key });
+                const objectResponse = await s3Client.send(getObjectCmd);
+                 if (objectResponse.Body) {
+                    const buffer = await streamToBuffer(objectResponse.Body as ReadableStream);
+                    const zipPath = item.key.replace(commonPrefix, '');
+                    zip.file(zipPath, buffer);
+                }
+            }
+        }
+    }
+    
     const content = await zip.generateAsync({ type: "base64" });
     return content;
 }
