@@ -11,6 +11,7 @@ import ObjectDetails from "./object-details";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { useToast } from "@/hooks/use-toast";
 import type { Bucket } from "@/context/BucketContext";
+import { ToastAction } from "@/components/ui/toast";
 
 type S3Item = (_Object | CommonPrefix) & { type: 'file' | 'folder' };
 
@@ -85,10 +86,17 @@ export default function S3Browser({ config, onDisconnect }: S3BrowserProps) {
 
       setItems([...folders, ...files]);
     } catch (e: any) {
-      toast({
+       let description = e.message || "Failed to fetch bucket contents. Please check credentials and bucket name.";
+       if (e.name === 'NetworkError' || description.includes('Failed to fetch')) {
+            description = "This might be a CORS issue. Your S3 bucket needs to be configured to allow requests from this web application's domain. Please check your bucket's CORS settings.";
+       }
+       toast({
         variant: "destructive",
         title: "Connection Error",
-        description: e.message || "Failed to fetch bucket contents. Please check credentials and bucket name.",
+        description: description,
+        action: description.includes('CORS') ? 
+            <ToastAction altText="Learn More" onClick={() => window.open('https://docs.aws.amazon.com/AmazonS3/latest/userguide/cors.html', '_blank')}>Learn More</ToastAction> : undefined,
+        duration: description.includes('CORS') ? 20000 : 5000,
       });
       console.error(e);
       onDisconnect();
