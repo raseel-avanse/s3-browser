@@ -1,6 +1,6 @@
 'use server';
 
-import { S3Client, ListObjectsV2Command, GetObjectCommand, ListObjectsV2CommandOutput, _Object } from "@aws-sdk/client-s3";
+import { S3Client, ListObjectsV2Command, GetObjectCommand, ListObjectsV2CommandOutput, _Object, GetObjectCommandOutput } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { z } from "zod";
 import type { S3ClientConfig } from "@aws-sdk/client-s3";
@@ -72,17 +72,13 @@ export async function getObjectUrl(config: Bucket, key: string): Promise<string>
   return url;
 }
 
-async function streamToBuffer(stream: ReadableStream): Promise<Buffer> {
-    const reader = stream.getReader();
-    const chunks = [];
-    while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        chunks.push(value);
+async function streamToBuffer(stream: GetObjectCommandOutput['Body']): Promise<Buffer> {
+    if (!stream) {
+        return Buffer.alloc(0);
     }
-    return Buffer.concat(chunks);
+    const byteArray = await stream.transformToByteArray();
+    return Buffer.from(byteArray);
 }
-
 
 export async function getFolderContentsAsZip(config: Bucket, prefix: string): Promise<string> {
     const s3Client = getS3Client(config);
@@ -104,7 +100,7 @@ export async function getFolderContentsAsZip(config: Bucket, prefix: string): Pr
                     const objectResponse = await s3Client.send(getObjectCmd);
                     
                     if (objectResponse.Body) {
-                        const buffer = await streamToBuffer(objectResponse.Body as ReadableStream);
+                        const buffer = await streamToBuffer(objectResponse.Body);
                         // Make sure the path in zip is relative to the folder being downloaded
                         const relativePath = item.Key.replace(prefix, "");
                         zip.file(relativePath, buffer);
@@ -159,7 +155,7 @@ export async function getItemsAsZip(config: Bucket, items: {key: string, type: '
                     const getObjectCmd = new GetObjectCommand({ Bucket: config.bucket, Key: obj.Key });
                     const objectResponse = await s3Client.send(getObjectCmd);
                     if (objectResponse.Body) {
-                        const buffer = await streamToBuffer(objectResponse.Body as ReadableStream);
+                        const buffer = await streamToBuffer(objectResponse.Body);
                         const zipPath = obj.Key.replace(commonPrefix, '');
                         zip.file(zipPath, buffer);
                     }
@@ -170,7 +166,7 @@ export async function getItemsAsZip(config: Bucket, items: {key: string, type: '
                 const getObjectCmd = new GetObjectCommand({ Bucket: config.bucket, Key: item.key });
                 const objectResponse = await s3Client.send(getObjectCmd);
                  if (objectResponse.Body) {
-                    const buffer = await streamToBuffer(objectResponse.Body as ReadableStream);
+                    const buffer = await streamToBuffer(objectResponse.Body);
                     const zipPath = item.key.replace(commonPrefix, '');
                     zip.file(zipPath, buffer);
                 }
