@@ -1,7 +1,7 @@
 "use client";
 
 import { S3Client, ListObjectsV2Command, _Object, CommonPrefix, S3ClientConfig } from "@aws-sdk/client-s3";
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -53,8 +53,9 @@ export default function S3Browser({ config, onDisconnect }: S3BrowserProps) {
   const [selectedItem, setSelectedItem] = useState<S3Item | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const [s3Client, setS3Client] = useState<S3Client | null>(null);
 
-  const s3Client = useMemo(() => {
+  useEffect(() => {
     const s3ClientOptions: S3ClientConfig = {
       region: config.region,
     };
@@ -64,10 +65,11 @@ export default function S3Browser({ config, onDisconnect }: S3BrowserProps) {
         secretAccessKey: config.secretAccessKey,
       }
     }
-    return new S3Client(s3ClientOptions);
+    setS3Client(new S3Client(s3ClientOptions));
   }, [config]);
 
   const fetchItems = useCallback(async (currentPrefix: string) => {
+    if (!s3Client) return;
     setIsLoading(true);
     
     try {
@@ -76,7 +78,7 @@ export default function S3Browser({ config, onDisconnect }: S3BrowserProps) {
         Prefix: currentPrefix,
         Delimiter: "/",
       });
-      const response = await s3Client!.send(command);
+      const response = await s3Client.send(command);
       
       const folders: S3Item[] = (response.CommonPrefixes || []).map(p => ({ ...p, type: 'folder' }));
       const files: S3Item[] = (response.Contents || []).filter(c => c.Key !== currentPrefix && c.Size! > 0).map(c => ({ ...c, type: 'file' }));
@@ -96,8 +98,10 @@ export default function S3Browser({ config, onDisconnect }: S3BrowserProps) {
   }, [config.bucket, s3Client, toast, onDisconnect]);
 
   useEffect(() => {
-    fetchItems(prefix);
-  }, [prefix, fetchItems]);
+    if (s3Client) {
+      fetchItems(prefix);
+    }
+  }, [prefix, s3Client, fetchItems]);
   
   const handleItemClick = (item: S3Item) => {
     if (item.type === 'folder' && item.Prefix) {
