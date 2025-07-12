@@ -6,8 +6,10 @@ import S3Browser from '@/components/s3-browser';
 
 export default function Home() {
   const [config, setConfig] = useState<S3Config | null>(null);
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
+    setIsClient(true);
     try {
       const storedConfig = localStorage.getItem('s3-config');
       if (storedConfig) {
@@ -15,6 +17,7 @@ export default function Home() {
       }
     } catch (error) {
       console.error("Failed to parse S3 config from localStorage", error);
+      // If parsing fails, it's good practice to clear the invalid item.
       localStorage.removeItem('s3-config');
     }
   }, []);
@@ -28,6 +31,11 @@ export default function Home() {
     localStorage.removeItem('s3-config');
     setConfig(null);
   };
+  
+  if (!isClient) {
+    // Render nothing or a loading spinner on the server to avoid hydration mismatch
+    return null;
+  }
 
   return (
     <main className="min-h-screen bg-background flex flex-col items-center justify-center p-4 md:p-8">
