@@ -18,6 +18,14 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // The following is a workaround for Next.js 15.3.3 to allow cross-origin requests in development.
+  // This is necessary for the Firebase Studio preview to work correctly.
+  experimental: {
+    allowedDevOrigins: [
+      'http://localhost:9002', // Standard local development
+      'https://*.googleusercontent.com', // Firebase Studio & Cloud Workstations
+    ],
+  },
 };
 
 export default nextConfig;
