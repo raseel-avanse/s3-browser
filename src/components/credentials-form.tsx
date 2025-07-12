@@ -14,8 +14,10 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useState } from "react";
+import { validateS3Connection } from "@/actions/s3";
+import { useToast } from "@/hooks/use-toast";
 
 const formSchema = z.object({
   accessKeyId: z.string().min(1, { message: "Access Key ID is required." }),
@@ -32,6 +34,8 @@ interface CredentialsFormProps {
 
 export function CredentialsForm({ onConnect }: CredentialsFormProps) {
   const [showSecret, setShowSecret] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const { toast } = useToast();
 
   const form = useForm<S3Config>({
     resolver: zodResolver(formSchema),
@@ -43,8 +47,20 @@ export function CredentialsForm({ onConnect }: CredentialsFormProps) {
     },
   });
 
-  function onSubmit(values: S3Config) {
-    onConnect(values);
+  async function onSubmit(values: S3Config) {
+    setIsConnecting(true);
+    const result = await validateS3Connection(values);
+    setIsConnecting(false);
+
+    if (result.success) {
+      onConnect(values);
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Connection Failed",
+        description: result.message,
+      });
+    }
   }
 
   return (
@@ -124,7 +140,8 @@ export function CredentialsForm({ onConnect }: CredentialsFormProps) {
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+            <Button type="submit" className="w-full" disabled={isConnecting}>
+              {isConnecting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Connect
             </Button>
           </form>
