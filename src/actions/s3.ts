@@ -2,31 +2,37 @@
 
 import { S3Client, ListObjectsV2Command } from "@aws-sdk/client-s3";
 import { z } from "zod";
+import type { S3ClientConfig } from "@aws-sdk/client-s3";
 
 const S3ConfigSchema = z.object({
-  accessKeyId: z.string(),
-  secretAccessKey: z.string(),
-  region: z.string(),
-  bucket: z.string(),
+  accessKeyId: z.string().optional(),
+  secretAccessKey: z.string().optional(),
+  region: z.string().min(1, { message: "Region is required." }),
+  bucket: z.string().min(1, { message: "Bucket name is required." }),
 });
 
 type S3Config = z.infer<typeof S3ConfigSchema>;
 
 export async function validateS3Connection(config: S3Config): Promise<{ success: boolean; message: string }> {
   try {
-    S3ConfigSchema.parse(config);
+    const validatedConfig = S3ConfigSchema.parse(config);
 
-    const s3Client = new S3Client({
-      region: config.region,
-      credentials: {
-        accessKeyId: config.accessKeyId,
-        secretAccessKey: config.secretAccessKey,
-      },
-    });
+    const s3ClientOptions: S3ClientConfig = {
+      region: validatedConfig.region,
+    };
+
+    if (validatedConfig.accessKeyId && validatedConfig.secretAccessKey) {
+      s3ClientOptions.credentials = {
+        accessKeyId: validatedConfig.accessKeyId,
+        secretAccessKey: validatedConfig.secretAccessKey,
+      };
+    }
+
+    const s3Client = new S3Client(s3ClientOptions);
 
     const command = new ListObjectsV2Command({
-      Bucket: config.bucket,
-      MaxKeys: 1, // We only need to check if we can access it, no need to list all objects
+      Bucket: validatedConfig.bucket,
+      MaxKeys: 1,
     });
 
     await s3Client.send(command);
@@ -41,6 +47,8 @@ export async function validateS3Connection(config: S3Config): Promise<{ success:
       errorMessage = "Invalid AWS Access Key ID or Secret Access Key.";
     } else if (error.code === 'PermanentRedirect') {
       errorMessage = `The bucket is in a different region. Please verify the bucket's region.`;
+    } else if (error.name === 'AccessDenied' || error.Code === 'AccessDenied') {
+        errorMessage = `Access Denied. If this is a public bucket, leave credentials empty. Otherwise, please check your credentials and bucket permissions.`;
     } else if (error instanceof z.ZodError) {
       errorMessage = "Invalid input data.";
     } else {

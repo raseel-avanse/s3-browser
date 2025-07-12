@@ -20,8 +20,8 @@ import { validateS3Connection } from "@/actions/s3";
 import { useToast } from "@/hooks/use-toast";
 
 const formSchema = z.object({
-  accessKeyId: z.string().min(1, { message: "Access Key ID is required." }),
-  secretAccessKey: z.string().min(1, { message: "Secret Access Key is required." }),
+  accessKeyId: z.string().optional(),
+  secretAccessKey: z.string().optional(),
   region: z.string().min(1, { message: "Region is required." }),
   bucket: z.string().min(1, { message: "Bucket name is required." }),
 });
@@ -67,17 +67,43 @@ export function CredentialsForm({ onConnect }: CredentialsFormProps) {
     <Card className="w-full max-w-md shadow-lg">
       <CardHeader>
         <CardTitle className="text-2xl font-headline">S3 Navigator</CardTitle>
-        <CardDescription>Enter your AWS credentials and bucket name to connect.</CardDescription>
+        <CardDescription>Enter your bucket name and region. For private buckets, also provide your AWS credentials.</CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+             <FormField
+              control={form.control}
+              name="bucket"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>S3 Bucket Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="my-awesome-bucket" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+             <FormField
+              control={form.control}
+              name="region"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>AWS Region</FormLabel>
+                  <FormControl>
+                    <Input placeholder="us-east-1" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <FormField
               control={form.control}
               name="accessKeyId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>AWS Access Key ID</FormLabel>
+                  <FormLabel>AWS Access Key ID <span className="text-muted-foreground">(optional)</span></FormLabel>
                   <FormControl>
                     <Input placeholder="AKIA..." {...field} />
                   </FormControl>
@@ -90,7 +116,7 @@ export function CredentialsForm({ onConnect }: CredentialsFormProps) {
               name="secretAccessKey"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>AWS Secret Access Key</FormLabel>
+                  <FormLabel>AWS Secret Access Key <span className="text-muted-foreground">(optional)</span></FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Input
@@ -109,32 +135,6 @@ export function CredentialsForm({ onConnect }: CredentialsFormProps) {
                         {showSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </Button>
                     </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="region"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>AWS Region</FormLabel>
-                  <FormControl>
-                    <Input placeholder="us-east-1" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="bucket"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>S3 Bucket Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="my-awesome-bucket" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

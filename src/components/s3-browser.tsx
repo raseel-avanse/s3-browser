@@ -1,6 +1,6 @@
 "use client";
 
-import { S3Client, ListObjectsV2Command, _Object, CommonPrefix } from "@aws-sdk/client-s3";
+import { S3Client, ListObjectsV2Command, _Object, CommonPrefix, S3ClientConfig } from "@aws-sdk/client-s3";
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { type S3Config } from "./credentials-form";
 import { Button } from "@/components/ui/button";
@@ -26,13 +26,18 @@ export default function S3Browser({ config, onDisconnect }: S3BrowserProps) {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  const s3Client = useMemo(() => new S3Client({
-    region: config.region,
-    credentials: {
-      accessKeyId: config.accessKeyId,
-      secretAccessKey: config.secretAccessKey,
+  const s3Client = useMemo(() => {
+    const s3ClientOptions: S3ClientConfig = {
+      region: config.region,
+    };
+    if (config.accessKeyId && config.secretAccessKey) {
+      s3ClientOptions.credentials = {
+        accessKeyId: config.accessKeyId,
+        secretAccessKey: config.secretAccessKey,
+      }
     }
-  }), [config]);
+    return new S3Client(s3ClientOptions);
+  }, [config]);
 
   const fetchItems = useCallback(async (currentPrefix: string) => {
     setIsLoading(true);
