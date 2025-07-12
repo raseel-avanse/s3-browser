@@ -1,6 +1,8 @@
 import type {Metadata} from 'next';
 import { Toaster } from "@/components/ui/toaster"
 import './globals.css';
+import { AuthProvider } from '@/context/AuthContext';
+import { BucketProvider } from '@/context/BucketContext';
 
 export const metadata: Metadata = {
   title: 'S3 Navigator',
@@ -20,7 +22,11 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased">
-        {children}
+        <AuthProvider>
+          <BucketProvider>
+            {children}
+          </BucketProvider>
+        </AuthProvider>
         <Toaster />
       </body>
     </html>
