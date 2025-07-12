@@ -1,8 +1,11 @@
 'use server';
 
-import { S3Client, ListObjectsV2Command } from "@aws-sdk/client-s3";
+import { S3Client, ListObjectsV2Command, GetObjectCommand, ListObjectsV2CommandOutput } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { z } from "zod";
 import type { S3ClientConfig } from "@aws-sdk/client-s3";
+import type { Bucket } from "@/context/BucketContext";
+import JSZip from "jszip";
 
 const S3ConfigSchema = z.object({
   accessKeyId: z.string().optional(),
@@ -13,22 +16,24 @@ const S3ConfigSchema = z.object({
 
 type S3Config = z.infer<typeof S3ConfigSchema>;
 
+function getS3Client(config: S3Config): S3Client {
+    const s3ClientOptions: S3ClientConfig = {
+      region: config.region,
+    };
+
+    if (config.accessKeyId && config.secretAccessKey) {
+      s3ClientOptions.credentials = {
+        accessKeyId: config.accessKeyId,
+        secretAccessKey: config.secretAccessKey,
+      };
+    }
+    return new S3Client(s3ClientOptions);
+}
+
 export async function validateS3Connection(config: S3Config): Promise<{ success: boolean; message: string }> {
   try {
     const validatedConfig = S3ConfigSchema.parse(config);
-
-    const s3ClientOptions: S3ClientConfig = {
-      region: validatedConfig.region,
-    };
-
-    if (validatedConfig.accessKeyId && validatedConfig.secretAccessKey) {
-      s3ClientOptions.credentials = {
-        accessKeyId: validatedConfig.accessKeyId,
-        secretAccessKey: validatedConfig.secretAccessKey,
-      };
-    }
-
-    const s3Client = new S3Client(s3ClientOptions);
+    const s3Client = getS3Client(validatedConfig);
 
     const command = new ListObjectsV2Command({
       Bucket: validatedConfig.bucket,
@@ -58,4 +63,58 @@ export async function validateS3Connection(config: S3Config): Promise<{ success:
     console.error("S3 Connection Error:", error);
     return { success: false, message: errorMessage };
   }
+}
+
+export async function getObjectUrl(config: Bucket, key: string): Promise<string> {
+  const s3Client = getS3Client(config);
+  const command = new GetObjectCommand({ Bucket: config.bucket, Key: key });
+  const url = await getSignedUrl(s3Client, command, { expiresIn: 3600 }); // URL expires in 1 hour
+  return url;
+}
+
+async function streamToBuffer(stream: ReadableStream): Promise<Buffer> {
+    const reader = stream.getReader();
+    const chunks = [];
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+    }
+    return Buffer.concat(chunks);
+}
+
+
+export async function getFolderContentsAsZip(config: Bucket, prefix: string): Promise<string> {
+    const s3Client = getS3Client(config);
+    const zip = new JSZip();
+    let continuationToken: string | undefined = undefined;
+
+    do {
+        const command = new ListObjectsV2Command({
+            Bucket: config.bucket,
+            Prefix: prefix,
+            ContinuationToken: continuationToken,
+        });
+        const response: ListObjectsV2CommandOutput = await s3Client.send(command);
+
+        if (response.Contents) {
+            for (const item of response.Contents) {
+                if (item.Key && item.Size! > 0) { // Don't add empty objects (like folders)
+                    const getObjectCmd = new GetObjectCommand({ Bucket: config.bucket, Key: item.Key });
+                    const objectResponse = await s3Client.send(getObjectCmd);
+                    
+                    if (objectResponse.Body) {
+                        const buffer = await streamToBuffer(objectResponse.Body as ReadableStream);
+                        // Make sure the path in zip is relative to the folder being downloaded
+                        const relativePath = item.Key.replace(prefix, "");
+                        zip.file(relativePath, buffer);
+                    }
+                }
+            }
+        }
+        continuationToken = response.NextContinuationToken;
+    } while (continuationToken);
+
+    const content = await zip.generateAsync({ type: "base64" });
+    return content;
 }

@@ -1,17 +1,18 @@
 "use client";
 
 import { S3Client, ListObjectsV2Command, _Object, CommonPrefix, S3ClientConfig } from "@aws-sdk/client-s3";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatBytes } from "@/lib/utils";
-import { Folder, File, HardDrive, LogOut, Home, Loader2, FileImage, FileText, Music, Video } from "lucide-react";
+import { Folder, File, HardDrive, LogOut, Home, Loader2, FileImage, FileText, Music, Video, Search } from "lucide-react";
 import ObjectDetails from "./object-details";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { useToast } from "@/hooks/use-toast";
 import type { Bucket } from "@/context/BucketContext";
 import { ToastAction } from "@/components/ui/toast";
+import { Input } from "./ui/input";
 
 type S3Item = (_Object | CommonPrefix) & { type: 'file' | 'folder' };
 
@@ -42,7 +43,6 @@ const getFileIcon = (key?: string) => {
     }
 };
 
-
 interface S3BrowserProps {
   config: Bucket;
   onDisconnect: () => void;
@@ -55,6 +55,7 @@ export default function S3Browser({ config, onDisconnect }: S3BrowserProps) {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const [s3Client, setS3Client] = useState<S3Client | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     const s3ClientOptions: S3ClientConfig = {
@@ -114,6 +115,7 @@ export default function S3Browser({ config, onDisconnect }: S3BrowserProps) {
   const handleItemClick = (item: S3Item) => {
     if (item.type === 'folder' && item.Prefix) {
       setPrefix(item.Prefix);
+      setSearchQuery(""); // Reset search when navigating folders
     } else {
       setSelectedItem(item);
     }
@@ -121,14 +123,25 @@ export default function S3Browser({ config, onDisconnect }: S3BrowserProps) {
 
   const handleBreadcrumbClick = (path: string) => {
     setPrefix(path);
+    setSearchQuery(""); // Reset search when navigating folders
   };
   
   const breadcrumbParts = ['home', ...prefix.split('/').filter(Boolean)];
 
+  const filteredItems = useMemo(() => {
+    if (!searchQuery) return items;
+    return items.filter(item => {
+        const name = item.type === 'folder' 
+            ? item.Prefix?.replace(prefix, '').replace('/', '') 
+            : item.Key?.replace(prefix, '');
+        return name?.toLowerCase().includes(searchQuery.toLowerCase());
+    });
+  }, [items, searchQuery, prefix]);
+
   return (
     <Card className="w-full h-[95vh] max-w-7xl shadow-lg flex flex-col">
-      <CardHeader className="flex flex-row items-center justify-between border-b p-4">
-        <div className="flex items-center gap-4">
+      <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between border-b p-4 gap-4">
+        <div className="flex items-center gap-4 w-full md:w-auto">
           <HardDrive className="h-6 w-6 text-primary" />
           <div className="flex flex-col gap-1">
             <CardTitle className="text-xl font-headline">{config.name} (s3://{config.bucket})</CardTitle>
@@ -158,7 +171,19 @@ export default function S3Browser({ config, onDisconnect }: S3BrowserProps) {
             </Breadcrumb>
           </div>
         </div>
-        <Button variant="outline" onClick={onDisconnect}><LogOut className="mr-2 h-4 w-4" /> Back to Buckets</Button>
+        <div className="flex items-center gap-4 w-full md:w-auto">
+            <div className="relative w-full md:w-64">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input 
+                    type="search"
+                    placeholder="Search in this folder..."
+                    className="pl-8"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                />
+            </div>
+            <Button variant="outline" onClick={onDisconnect}><LogOut className="mr-2 h-4 w-4" /> Back</Button>
+        </div>
       </CardHeader>
       <CardContent className="p-0 flex-grow overflow-y-auto relative">
         {isLoading ? (
@@ -176,7 +201,7 @@ export default function S3Browser({ config, onDisconnect }: S3BrowserProps) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {items.length > 0 ? items.map((item, index) => (
+              {filteredItems.length > 0 ? filteredItems.map((item, index) => (
                 <TableRow key={item.Key || item.Prefix || index} onClick={() => handleItemClick(item)} className="cursor-pointer hover:bg-accent/50">
                   <TableCell>
                     {item.type === 'folder' ? (
@@ -197,7 +222,9 @@ export default function S3Browser({ config, onDisconnect }: S3BrowserProps) {
                 </TableRow>
               )) : (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center h-24 text-muted-foreground">This folder is empty.</TableCell>
+                  <TableCell colSpan={4} className="text-center h-24 text-muted-foreground">
+                    {searchQuery ? `No results for "${searchQuery}"` : "This folder is empty."}
+                    </TableCell>
                 </TableRow>
               )}
             </TableBody>
@@ -206,7 +233,7 @@ export default function S3Browser({ config, onDisconnect }: S3BrowserProps) {
       </CardContent>
       <ObjectDetails 
         item={selectedItem}
-        bucket={config.bucket}
+        bucketConfig={config}
         open={!!selectedItem}
         onOpenChange={(open) => !open && setSelectedItem(null)}
       />
