@@ -18,7 +18,7 @@ import { Badge } from '@/components/ui/badge';
 
 export default function HomePage() {
   const { user, isAuthenticated, isLoading, logout } = useAuth();
-  const { buckets, addBucket, updateBucket, deleteBucket, setSelectedBucket, setBucketStatus } = useBucket();
+  const { buckets, addBucket, updateBucket, deleteBucket, setBucketStatus } = useBucket();
   const router = useRouter();
   const { toast } = useToast();
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -72,7 +72,6 @@ export default function HomePage() {
       });
       return;
     }
-    setSelectedBucket(bucket);
     router.push(`/buckets/${bucket.id}`);
   };
 

@@ -11,7 +11,7 @@ export default function BucketBrowserPage() {
     const router = useRouter();
     const params = useParams();
     const { id } = params;
-    const { getBucketById, setSelectedBucket } = useBucket();
+    const { getBucketById } = useBucket();
     const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
     const [isReady, setIsReady] = useState(false);
 
@@ -34,7 +34,6 @@ export default function BucketBrowserPage() {
 
 
     const handleDisconnect = () => {
-        setSelectedBucket(null);
         router.push('/');
     };
 
