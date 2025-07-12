@@ -87,7 +87,7 @@ export default function S3Browser({ config, onDisconnect }: S3BrowserProps) {
       setItems([...folders, ...files]);
     } catch (e: any) {
        let description = e.message || "Failed to fetch bucket contents. Please check credentials and bucket name.";
-       if (e.name === 'NetworkError' || description.includes('Failed to fetch')) {
+       if (e.name === 'NetworkError' || (e.message && e.message.toLowerCase().includes('failed to fetch'))) {
             description = "This might be a CORS issue. Your S3 bucket needs to be configured to allow requests from this web application's domain. Please check your bucket's CORS settings.";
        }
        toast({
