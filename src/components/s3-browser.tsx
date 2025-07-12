@@ -7,19 +7,63 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatBytes } from "@/lib/utils";
-import { Folder, File, HardDrive, LogOut, Home, Loader2 } from "lucide-react";
+import { Folder, File, HardDrive, LogOut, Home, Loader2, FileImage, FileText, Music, Video } from "lucide-react";
 import ObjectDetails from "./object-details";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { useToast } from "@/hooks/use-toast";
 
 type S3Item = (_Object | CommonPrefix) & { type: 'file' | 'folder' };
 
+const dummyFolders: S3Item[] = [
+  { Prefix: "documents/", type: 'folder' },
+  { Prefix: "images/", type: 'folder' },
+  { Prefix: "media/", type: 'folder' },
+];
+
+const dummyFiles: S3Item[] = [
+    { Key: "project-brief.docx", LastModified: new Date('2023-10-26T10:00:00Z'), Size: 12345, type: 'file' },
+    { Key: "company-logo.png", LastModified: new Date('2023-10-25T15:30:00Z'), Size: 5678, type: 'file' },
+    { Key: "team-photo.jpg", LastModified: new Date('2023-09-12T11:20:00Z'), Size: 450000, type: 'file' },
+    { Key: "quarterly-report.pdf", LastModified: new Date('2023-10-20T18:00:00Z'), Size: 1200000, type: 'file' },
+    { Key: "onboarding-video.mp4", LastModified: new Date('2023-08-01T09:00:00Z'), Size: 25000000, type: 'file' },
+    { Key: "background-music.mp3", LastModified: new Date('2023-07-15T14:45:00Z'), Size: 3500000, type: 'file' },
+];
+
+const getFileIcon = (key?: string) => {
+    if (!key) return <File className="h-5 w-5 text-muted-foreground" />;
+    const extension = key.split('.').pop()?.toLowerCase();
+    switch (extension) {
+        case 'png':
+        case 'jpg':
+        case 'jpeg':
+        case 'gif':
+        case 'svg':
+            return <FileImage className="h-5 w-5 text-blue-500" />;
+        case 'mp3':
+        case 'wav':
+            return <Music className="h-5 w-5 text-purple-500" />;
+        case 'mp4':
+        case 'mov':
+        case 'avi':
+            return <Video className="h-5 w-5 text-red-500" />;
+        case 'txt':
+        case 'md':
+        case 'docx':
+        case 'pdf':
+            return <FileText className="h-5 w-5 text-green-500" />;
+        default:
+            return <File className="h-5 w-5 text-muted-foreground" />;
+    }
+};
+
+
 interface S3BrowserProps {
   config: S3Config;
   onDisconnect: () => void;
+  useDummyData?: boolean;
 }
 
-export default function S3Browser({ config, onDisconnect }: S3BrowserProps) {
+export default function S3Browser({ config, onDisconnect, useDummyData = false }: S3BrowserProps) {
   const [prefix, setPrefix] = useState("");
   const [items, setItems] = useState<S3Item[]>([]);
   const [selectedItem, setSelectedItem] = useState<S3Item | null>(null);
@@ -27,6 +71,7 @@ export default function S3Browser({ config, onDisconnect }: S3BrowserProps) {
   const { toast } = useToast();
 
   const s3Client = useMemo(() => {
+    if (useDummyData) return null;
     const s3ClientOptions: S3ClientConfig = {
       region: config.region,
     };
@@ -37,17 +82,31 @@ export default function S3Browser({ config, onDisconnect }: S3BrowserProps) {
       }
     }
     return new S3Client(s3ClientOptions);
-  }, [config]);
+  }, [config, useDummyData]);
 
   const fetchItems = useCallback(async (currentPrefix: string) => {
     setIsLoading(true);
+    if (useDummyData) {
+      setTimeout(() => {
+        if (currentPrefix === "") {
+            setItems([...dummyFolders, ...dummyFiles]);
+        } else {
+            // In a real scenario, you'd have nested dummy data.
+            // For now, we'll just show an empty folder.
+            setItems([]);
+        }
+        setIsLoading(false);
+      }, 500);
+      return;
+    }
+
     try {
       const command = new ListObjectsV2Command({
         Bucket: config.bucket,
         Prefix: currentPrefix,
         Delimiter: "/",
       });
-      const response = await s3Client.send(command);
+      const response = await s3Client!.send(command);
       
       const folders: S3Item[] = (response.CommonPrefixes || []).map(p => ({ ...p, type: 'folder' }));
       const files: S3Item[] = (response.Contents || []).filter(c => c.Key !== currentPrefix && c.Size! > 0).map(c => ({ ...c, type: 'file' }));
@@ -64,7 +123,7 @@ export default function S3Browser({ config, onDisconnect }: S3BrowserProps) {
     } finally {
       setIsLoading(false);
     }
-  }, [config.bucket, s3Client, toast, onDisconnect]);
+  }, [config.bucket, s3Client, toast, onDisconnect, useDummyData]);
 
   useEffect(() => {
     fetchItems(prefix);
@@ -141,7 +200,7 @@ export default function S3Browser({ config, onDisconnect }: S3BrowserProps) {
                     {item.type === 'folder' ? (
                       <Folder className="h-5 w-5 text-primary" />
                     ) : (
-                      <File className="h-5 w-5 text-muted-foreground" />
+                      getFileIcon(item.Key)
                     )}
                   </TableCell>
                   <TableCell className="font-medium">
