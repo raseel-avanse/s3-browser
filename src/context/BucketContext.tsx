@@ -10,6 +10,7 @@ export interface Bucket {
   region: string;
   accessKeyId?: string;
   secretAccessKey?: string;
+  status: 'untested' | 'connected' | 'failed';
 }
 
 interface BucketContextType {
@@ -20,6 +21,7 @@ interface BucketContextType {
   deleteBucket: (id: string) => void;
   setSelectedBucket: (bucket: Bucket | null) => void;
   getBucketById: (id: string) => Bucket | undefined;
+  setBucketStatus: (id: string, status: Bucket['status']) => void;
 }
 
 const BucketContext = createContext<BucketContextType | undefined>(undefined);
@@ -69,8 +71,12 @@ export function BucketProvider({ children }: { children: React.ReactNode }) {
     return buckets.find(b => b.id === id);
   };
 
+  const setBucketStatus = (id: string, status: Bucket['status']) => {
+    setBuckets(prev => prev.map(b => b.id === id ? { ...b, status } : b));
+  }
+
   return (
-    <BucketContext.Provider value={{ buckets, selectedBucket, addBucket, updateBucket, deleteBucket, setSelectedBucket, getBucketById }}>
+    <BucketContext.Provider value={{ buckets, selectedBucket, addBucket, updateBucket, deleteBucket, setSelectedBucket, getBucketById, setBucketStatus }}>
       {children}
     </BucketContext.Provider>
   );

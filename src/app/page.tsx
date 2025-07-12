@@ -1,23 +1,29 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { useBucket } from '@/context/BucketContext';
+import { useBucket, type Bucket } from '@/context/BucketContext';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Trash, Edit, LogOut, HardDrive, Loader2 } from 'lucide-react';
+import { Plus, Trash, Edit, LogOut, HardDrive, Loader2, Users, HelpCircle, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
 import { CredentialsForm, type S3Config } from '@/components/credentials-form';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import LoginPage from './login/page';
+import { validateS3Connection } from '@/actions/s3';
+import { useToast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
 
 export default function HomePage() {
-  const { isAuthenticated, isLoading, logout } = useAuth();
-  const { buckets, addBucket, updateBucket, deleteBucket, setSelectedBucket } = useBucket();
+  const { user, isAuthenticated, isLoading, logout } = useAuth();
+  const { buckets, addBucket, updateBucket, deleteBucket, setSelectedBucket, setBucketStatus } = useBucket();
   const router = useRouter();
+  const { toast } = useToast();
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingBucket, setEditingBucket] = useState<S3Config & { id: string } | undefined>(undefined);
+  const [editingBucket, setEditingBucket] = useState<Bucket | undefined>(undefined);
+  const [testingConnectionId, setTestingConnectionId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -42,22 +48,30 @@ export default function HomePage() {
     setIsFormOpen(true);
   };
 
-  const handleEditClick = (bucket: S3Config & { id: string }) => {
+  const handleEditClick = (bucket: Bucket) => {
     setEditingBucket(bucket);
     setIsFormOpen(true);
   };
 
   const handleSave = (config: S3Config) => {
     if (editingBucket) {
-      updateBucket(editingBucket.id, config);
+      updateBucket(editingBucket.id, { ...config, status: editingBucket.status });
     } else {
-      addBucket(config);
+      addBucket({ ...config, status: 'untested' });
     }
     setIsFormOpen(false);
     setEditingBucket(undefined);
   };
 
-  const handleSelectBucket = (bucket: S3Config & { id: string }) => {
+  const handleSelectBucket = (bucket: Bucket) => {
+    if (bucket.status !== 'connected') {
+      toast({
+        variant: "destructive",
+        title: "Connection Not Verified",
+        description: "Please test the connection successfully before browsing the bucket.",
+      });
+      return;
+    }
     setSelectedBucket(bucket);
     router.push(`/buckets/${bucket.id}`);
   };
@@ -67,11 +81,43 @@ export default function HomePage() {
     router.push('/login');
   };
 
+  const handleTestConnection = async (bucket: Bucket) => {
+    setTestingConnectionId(bucket.id);
+    const result = await validateS3Connection(bucket);
+    if (result.success) {
+      setBucketStatus(bucket.id, 'connected');
+      toast({ title: 'Success', description: result.message });
+    } else {
+      setBucketStatus(bucket.id, 'failed');
+      toast({ variant: 'destructive', title: 'Connection Failed', description: result.message });
+    }
+    setTestingConnectionId(null);
+  };
+
+  const getStatusIcon = (status: Bucket['status']) => {
+    switch (status) {
+      case 'connected':
+        return <Badge variant="secondary" className="border-green-500 text-green-700"><CheckCircle className="mr-1 h-3 w-3" /> Connected</Badge>;
+      case 'failed':
+        return <Badge variant="destructive"><XCircle className="mr-1 h-3 w-3" /> Failed</Badge>;
+      case 'untested':
+      default:
+        return <Badge variant="outline"><HelpCircle className="mr-1 h-3 w-3" /> Untested</Badge>;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="p-4 border-b flex justify-between items-center">
         <h1 className="text-2xl font-headline flex items-center gap-2"><HardDrive/> S3 Navigator</h1>
-        <Button variant="outline" onClick={handleLogout}><LogOut className="mr-2 h-4 w-4" /> Logout</Button>
+        <div className="flex items-center gap-4">
+          {user?.username === 'admin' && (
+             <Link href="/users" passHref>
+                <Button variant="outline"><Users className="mr-2 h-4 w-4" /> User Management</Button>
+            </Link>
+          )}
+          <Button variant="outline" onClick={handleLogout}><LogOut className="mr-2 h-4 w-4" /> Logout</Button>
+        </div>
       </header>
       <main className="p-4 md:p-8">
         <div className="flex justify-between items-center mb-6">
@@ -99,14 +145,31 @@ export default function HomePage() {
             {buckets.map((bucket) => (
               <Card key={bucket.id} className="flex flex-col">
                 <CardHeader>
-                  <CardTitle>{bucket.name}</CardTitle>
-                  <CardDescription>s3://{bucket.bucket}</CardDescription>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <CardTitle>{bucket.name}</CardTitle>
+                      <CardDescription>s3://{bucket.bucket}</CardDescription>
+                    </div>
+                    {getStatusIcon(bucket.status)}
+                  </div>
                 </CardHeader>
                 <CardContent className="flex-grow">
                   <p className="text-sm text-muted-foreground">Region: {bucket.region}</p>
                 </CardContent>
                 <CardFooter className="flex justify-between">
-                  <Button variant="outline" onClick={() => handleSelectBucket(bucket)}>Browse</Button>
+                  <div className="flex gap-2">
+                    <Button variant="outline" onClick={() => handleSelectBucket(bucket)} disabled={bucket.status !== 'connected'}>Browse</Button>
+                    <Button 
+                      variant="secondary" 
+                      onClick={() => handleTestConnection(bucket)}
+                      disabled={testingConnectionId === bucket.id}
+                    >
+                      {testingConnectionId === bucket.id ? 
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 
+                        <RefreshCw className="mr-2 h-4 w-4" />}
+                      Test
+                    </Button>
+                  </div>
                   <div className="flex gap-2">
                     <Button variant="ghost" size="icon" onClick={() => handleEditClick(bucket)}><Edit className="h-4 w-4" /></Button>
                     <AlertDialog>

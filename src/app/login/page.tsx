@@ -44,20 +44,24 @@ export default function LoginPage() {
   async function onSubmit(values: LoginFormValues) {
     setIsLoading(true);
     const success = login(values.username, values.password);
-    setIsLoading(false);
-
+    
     if (success) {
       toast({
         title: "Login Successful",
         description: "Welcome back!",
       });
-      router.push("/");
+      // Delay navigation slightly to allow state to propagate
+      setTimeout(() => {
+        router.push("/");
+        setIsLoading(false);
+      }, 300);
     } else {
       toast({
         variant: "destructive",
         title: "Login Failed",
         description: "Invalid username or password.",
       });
+      setIsLoading(false);
     }
   }
 

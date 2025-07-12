@@ -3,6 +3,7 @@ import { Toaster } from "@/components/ui/toaster"
 import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
 import { BucketProvider } from '@/context/BucketContext';
+import { UserProvider } from '@/context/UserContext';
 
 export const metadata: Metadata = {
   title: 'S3 Navigator',
@@ -22,11 +23,13 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased">
-        <AuthProvider>
-          <BucketProvider>
-            {children}
-          </BucketProvider>
-        </AuthProvider>
+        <UserProvider>
+          <AuthProvider>
+            <BucketProvider>
+              {children}
+            </BucketProvider>
+          </AuthProvider>
+        </UserProvider>
         <Toaster />
       </body>
     </html>

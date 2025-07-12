@@ -15,7 +15,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useState } from "react";
-import { validateS3Connection } from "@/actions/s3";
 import { useToast } from "@/hooks/use-toast";
 import type { Bucket } from "@/context/BucketContext";
 
@@ -27,7 +26,7 @@ const formSchema = z.object({
   bucket: z.string().min(1, { message: "Bucket name is required." }),
 });
 
-export type S3Config = Omit<Bucket, 'id'>;
+export type S3Config = Omit<Bucket, 'id' | 'status'>;
 
 interface CredentialsFormProps {
   onSave: (config: S3Config) => void;
@@ -38,7 +37,6 @@ interface CredentialsFormProps {
 
 export function CredentialsForm({ onSave, onCancel, initialData, isEditing = false }: CredentialsFormProps) {
   const [showSecret, setShowSecret] = useState(false);
-  const [isConnecting, setIsConnecting] = useState(false);
   const { toast } = useToast();
 
   const form = useForm<S3Config>({
@@ -52,24 +50,12 @@ export function CredentialsForm({ onSave, onCancel, initialData, isEditing = fal
     },
   });
 
-  async function onSubmit(values: S3Config) {
-    setIsConnecting(true);
-    const result = await validateS3Connection(values);
-    setIsConnecting(false);
-
-    if (result.success) {
-      onSave(values);
-      toast({
+  function onSubmit(values: S3Config) {
+    onSave(values);
+    toast({
         title: isEditing ? "Bucket Updated" : "Bucket Added",
-        description: `Successfully connected and saved "${values.name}".`,
-      });
-    } else {
-      toast({
-        variant: "destructive",
-        title: "Connection Failed",
-        description: result.message,
-      });
-    }
+        description: `Successfully saved "${values.name}".`,
+    });
   }
 
   return (
@@ -160,8 +146,7 @@ export function CredentialsForm({ onSave, onCancel, initialData, isEditing = fal
             <Button type="button" variant="outline" onClick={onCancel}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isConnecting}>
-              {isConnecting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Button type="submit">
               {isEditing ? 'Save Changes' : 'Add Bucket'}
             </Button>
         </div>
