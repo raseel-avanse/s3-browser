@@ -1,14 +1,13 @@
 "use client";
 
 import { S3Client, ListObjectsV2Command, _Object, CommonPrefix } from "@aws-sdk/client-s3";
-import { useState, useMemo, useEffect, useCallback } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { type S3Config } from "./credentials-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { formatBytes } from "@/lib/utils";
-import { Folder, File, HardDrive, AlertCircle, LogOut, Home, Loader2 } from "lucide-react";
+import { Folder, File, HardDrive, LogOut, Home, Loader2 } from "lucide-react";
 import ObjectDetails from "./object-details";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { useToast } from "@/hooks/use-toast";
