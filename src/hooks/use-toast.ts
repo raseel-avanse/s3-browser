@@ -164,6 +164,13 @@ function toast({ ...props }: Toast) {
     },
   })
 
+  // Auto-dismiss if duration is provided
+  if (props.duration) {
+    setTimeout(() => {
+      dismiss();
+    }, props.duration);
+  }
+
   return {
     id: id,
     dismiss,
