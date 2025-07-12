@@ -4,7 +4,7 @@ import { useBucket } from "@/context/BucketContext";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter, useParams } from "next/navigation";
 import S3Browser from "@/components/s3-browser";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 
 export default function BucketBrowserPage() {
@@ -13,22 +13,24 @@ export default function BucketBrowserPage() {
     const { id } = params;
     const { getBucketById, setSelectedBucket } = useBucket();
     const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
+    const [isReady, setIsReady] = useState(false);
 
     const bucketId = typeof id === 'string' ? id : '';
     const bucket = getBucketById(bucketId);
 
     useEffect(() => {
-        if (!isAuthLoading && !isAuthenticated) {
-            router.push('/login');
+        if (!isAuthLoading) {
+            if (!isAuthenticated) {
+                router.push('/login');
+            } else if (!bucket) {
+                // If bucket not found after auth check, go to home
+                router.push('/');
+            } else {
+                // Auth and bucket are ready
+                setIsReady(true);
+            }
         }
-    }, [isAuthenticated, isAuthLoading, router]);
-
-    useEffect(() => {
-        if (!isAuthLoading && isAuthenticated && !bucket) {
-            // If bucket not found, maybe redirect to the buckets list
-            router.push('/');
-        }
-    }, [bucket, isAuthenticated, isAuthLoading, router]);
+    }, [isAuthenticated, isAuthLoading, bucket, router]);
 
 
     const handleDisconnect = () => {
@@ -36,7 +38,7 @@ export default function BucketBrowserPage() {
         router.push('/');
     };
 
-    if (isAuthLoading || !bucket) {
+    if (!isReady || !bucket) {
         return (
             <div className="w-screen h-screen flex items-center justify-center">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
