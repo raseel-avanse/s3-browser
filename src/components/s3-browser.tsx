@@ -123,9 +123,9 @@ export default function S3Browser({ config, onDisconnect }: S3BrowserProps) {
         return;
     }
     
-    if (item.type === 'folder' && item.Prefix) {
-      if (selectedKeys.has(item.Prefix)) return;
-      setPrefix(item.Prefix);
+    if (item.type === 'folder' && (item as CommonPrefix).Prefix) {
+      if (selectedKeys.has((item as CommonPrefix).Prefix!)) return;
+      setPrefix((item as CommonPrefix).Prefix!);
       setSearchQuery(""); // Reset search when navigating folders
     } else {
       setSelectedItem(item);
@@ -151,7 +151,7 @@ export default function S3Browser({ config, onDisconnect }: S3BrowserProps) {
 
   const handleSelectAll = (checked: boolean | "indeterminate") => {
       if(checked) {
-        const allVisibleKeys = filteredItems.map(item => item.type === 'folder' ? item.Prefix! : item.Key!);
+        const allVisibleKeys = filteredItems.map(item => item.type === 'folder' ? (item as CommonPrefix).Prefix! : (item as _Object).Key!);
         setSelectedKeys(new Set(allVisibleKeys));
       } else {
         setSelectedKeys(new Set());
@@ -163,9 +163,9 @@ export default function S3Browser({ config, onDisconnect }: S3BrowserProps) {
     setIsDownloading(true);
     try {
         const itemsToDownload = items
-            .filter(item => selectedKeys.has(item.type === 'folder' ? item.Prefix! : item.Key!))
+            .filter(item => selectedKeys.has(item.type === 'folder' ? (item as CommonPrefix).Prefix! : (item as _Object).Key!))
             .map(item => ({
-                key: (item.type === 'folder' ? item.Prefix : item.Key)!,
+                key: (item.type === 'folder' ? (item as CommonPrefix).Prefix : (item as _Object).Key)!,
                 type: item.type
             }));
         
@@ -194,14 +194,14 @@ export default function S3Browser({ config, onDisconnect }: S3BrowserProps) {
     if (!searchQuery) return items;
     return items.filter(item => {
         const name = item.type === 'folder' 
-            ? item.Prefix?.replace(prefix, '').replace('/', '') 
-            : item.Key?.replace(prefix, '');
+            ? (item as CommonPrefix).Prefix?.replace(prefix, '').replace('/', '') 
+            : (item as _Object).Key?.replace(prefix, '');
         return name?.toLowerCase().includes(searchQuery.toLowerCase());
     });
   }, [items, searchQuery, prefix]);
 
-  const areAllVisibleSelected = filteredItems.length > 0 && selectedKeys.size === filteredItems.length && filteredItems.every(item => selectedKeys.has((item.type === 'folder' ? item.Prefix : item.Key)!));
-  const isAnyVisibleSelected = filteredItems.some(item => selectedKeys.has((item.type === 'folder' ? item.Prefix : item.Key)!));
+  const areAllVisibleSelected = filteredItems.length > 0 && selectedKeys.size === filteredItems.length && filteredItems.every(item => selectedKeys.has((item.type === 'folder' ? (item as CommonPrefix).Prefix : (item as _Object).Key)!));
+  const isAnyVisibleSelected = filteredItems.some(item => selectedKeys.has((item.type === 'folder' ? (item as CommonPrefix).Prefix : (item as _Object).Key)!));
 
   return (
     <Card className="w-full h-[95vh] max-w-7xl shadow-lg flex flex-col">
@@ -281,7 +281,7 @@ export default function S3Browser({ config, onDisconnect }: S3BrowserProps) {
             </TableHeader>
             <TableBody>
               {filteredItems.length > 0 ? filteredItems.map((item, index) => {
-                const key = item.type === 'folder' ? item.Prefix! : item.Key!;
+                const key = item.type === 'folder' ? (item as CommonPrefix).Prefix! : (item as _Object).Key!;
                 const isSelected = selectedKeys.has(key);
                 return (
                     <TableRow 
@@ -302,7 +302,7 @@ export default function S3Browser({ config, onDisconnect }: S3BrowserProps) {
                         {item.type === 'folder' ? (
                         <Folder className="h-5 w-5 text-primary" />
                         ) : (
-                        getFileIcon(item.Key)
+                        getFileIcon((item as _Object).Key)
                         )}
                     </TableCell>
                     <TableCell className="font-medium" onClick={(e) => {
@@ -311,13 +311,13 @@ export default function S3Browser({ config, onDisconnect }: S3BrowserProps) {
                          setSelectedItem(item);
                        }
                     }}>
-                        {item.type === 'folder' ? item.Prefix?.replace(prefix, '').replace('/', '') : item.Key?.replace(prefix, '')}
+                        {item.type === 'folder' ? (item as CommonPrefix).Prefix?.replace(prefix, '').replace('/', '') : (item as _Object).Key?.replace(prefix, '')}
                     </TableCell>
                     <TableCell>
-                        {item.type === 'file' && item.LastModified ? new Date(item.LastModified).toLocaleString() : '—'}
+                        {item.type === 'file' && (item as _Object).LastModified ? new Date((item as _Object).LastModified!).toLocaleString() : '—'}
                     </TableCell>
                     <TableCell className="text-right">
-                        {item.type === 'file' && item.Size != null ? formatBytes(item.Size) : '—'}
+                        {item.type === 'file' && (item as _Object).Size != null ? formatBytes((item as _Object).Size!) : '—'}
                     </TableCell>
                     </TableRow>
                 )
