@@ -25,8 +25,8 @@ export default function ObjectDetails({ item, bucketConfig, open, onOpenChange }
   if (!item) return null;
 
   const isFile = item.type === 'file';
-  const name = isFile ? item.Key?.split('/').pop() : item.Prefix?.split('/').slice(-2, -1)[0];
-  const fullPath = isFile ? item.Key : item.Prefix;
+  const name = isFile ? (item as _Object).Key?.split('/').pop() : (item as CommonPrefix).Prefix?.split('/').slice(-2, -1)[0];
+  const fullPath = isFile ? (item as _Object).Key : (item as CommonPrefix).Prefix;
 
   const handleDownload = async () => {
     if (!fullPath) return;
@@ -93,22 +93,22 @@ export default function ObjectDetails({ item, bucketConfig, open, onOpenChange }
             <span className="text-muted-foreground col-span-1">Full Path</span>
             <span className="col-span-2 break-all">{fullPath}</span>
           </div>
-          {isFile && item.Size != null && (
+          {isFile && (item as _Object).Size != null && (
             <div className="grid grid-cols-3 items-center gap-4">
               <span className="text-muted-foreground col-span-1">Size</span>
-              <span className="col-span-2">{formatBytes(item.Size)}</span>
+              <span className="col-span-2">{formatBytes((item as _Object).Size!)}</span>
             </div>
           )}
-          {isFile && item.LastModified && (
+          {isFile && (item as _Object).LastModified && (
             <div className="grid grid-cols-3 items-center gap-4">
               <span className="text-muted-foreground col-span-1">Last Modified</span>
-              <span className="col-span-2">{new Date(item.LastModified).toLocaleString()}</span>
+              <span className="col-span-2">{new Date((item as _Object).LastModified!).toLocaleString()}</span>
             </div>
           )}
-           {isFile && item.StorageClass && (
+           {isFile && (item as _Object).StorageClass && (
             <div className="grid grid-cols-3 items-center gap-4">
               <span className="text-muted-foreground col-span-1">Storage Class</span>
-              <span className="col-span-2">{item.StorageClass}</span>
+              <span className="col-span-2">{(item as _Object).StorageClass}</span>
             </div>
           )}
         </div>
