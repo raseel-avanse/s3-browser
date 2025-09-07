@@ -20,12 +20,6 @@ const nextConfig: NextConfig = {
   },
   // Configuration for Replit environment
   // Allow all hosts since Replit shows the website in a proxy/iframe
-  experimental: {
-    allowedDevOrigins: [
-      'http://localhost:5000', // Replit environment
-      'https://*.googleusercontent.com', // Firebase Studio & Cloud Workstations
-    ],
-  },
   // Allow all hosts for development server in Replit
   async headers() {
     return [
