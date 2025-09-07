@@ -19,7 +19,6 @@ const nextConfig: NextConfig = {
     ],
   },
   // Configuration for Replit environment
-  // Allow all hosts since Replit shows the website in a proxy/iframe
   // Allow all hosts for development server in Replit
   async headers() {
     return [
