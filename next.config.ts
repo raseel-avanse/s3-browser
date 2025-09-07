@@ -18,13 +18,27 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  // The following is a workaround for Next.js 15.3.3 to allow cross-origin requests in development.
-  // This is necessary for the Firebase Studio preview to work correctly.
+  // Configuration for Replit environment
+  // Allow all hosts since Replit shows the website in a proxy/iframe
   experimental: {
     allowedDevOrigins: [
-      'http://localhost:9002', // Standard local development
+      'http://localhost:5000', // Replit environment
       'https://*.googleusercontent.com', // Firebase Studio & Cloud Workstations
     ],
+  },
+  // Allow all hosts for development server in Replit
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'X-Frame-Options',
+            value: 'SAMEORIGIN',
+          },
+        ],
+      },
+    ]
   },
 };
 
