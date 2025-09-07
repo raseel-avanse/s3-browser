@@ -35,13 +35,22 @@ export default function ObjectDetails({ item, bucketConfig, open, onOpenChange }
     try {
         if (isFile) {
             const url = await getObjectUrl(bucketConfig, fullPath);
+            // Force download by fetching the file and creating a blob URL
+            const response = await fetch(url);
+            const blob = await response.blob();
+            const blobUrl = window.URL.createObjectURL(blob);
+            
             // Create a temporary link to trigger the download
             const link = document.createElement('a');
-            link.href = url;
+            link.href = blobUrl;
             link.setAttribute('download', name || 'download');
+            link.style.display = 'none';
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+            
+            // Clean up the blob URL to free memory
+            window.URL.revokeObjectURL(blobUrl);
         } else {
             // It's a folder, zip it
             const base64Zip = await getFolderContentsAsZip(bucketConfig, fullPath);
