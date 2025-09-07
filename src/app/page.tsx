@@ -123,7 +123,7 @@ export default function HomePage() {
           Test
       </Button>
       <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); handleEditClick(bucket); }}><Edit className="h-4 w-4" /></Button>
-      <AlertDialog onOpenChange={(e) => e.stopPropagation()}>
+      <AlertDialog>
         <AlertDialogTrigger asChild>
           <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive h-9 w-9" onClick={(e) => e.stopPropagation()}><Trash className="h-4 w-4" /></Button>
         </AlertDialogTrigger>
