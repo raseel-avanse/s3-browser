@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatBytes } from "@/lib/utils";
-import { Folder, File, HardDrive, LogOut, Home, Loader2, FileImage, FileText, Music, Video, Search, Download } from "lucide-react";
+import { Folder, File, HardDrive, LogOut, Home, Loader2, FileImage, FileText, Music, Video, Search, Download, Upload } from "lucide-react";
 import ObjectDetails from "./object-details";
+import UploadDialog from "./upload-dialog";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { useToast } from "@/hooks/use-toast";
 import type { Bucket } from "@/context/BucketContext";
@@ -72,6 +73,7 @@ export default function S3Browser({ config, onDisconnect }: S3BrowserProps) {
   const [isDownloading, setIsDownloading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
 
   useEffect(() => {
     const s3ClientOptions: S3ClientConfig = {
@@ -199,6 +201,12 @@ export default function S3Browser({ config, onDisconnect }: S3BrowserProps) {
         setIsDownloading(false);
     }
   };
+
+  const handleUploadComplete = () => {
+    // Refresh the items list after upload
+    fetchItems(prefix);
+    setUploadDialogOpen(false);
+  };
   
   const breadcrumbParts = ['home', ...prefix.split('/').filter(Boolean)];
 
@@ -260,6 +268,10 @@ export default function S3Browser({ config, onDisconnect }: S3BrowserProps) {
           </div>
         </div>
         <div className="flex items-center gap-4 w-full md:w-auto">
+            <Button onClick={() => setUploadDialogOpen(true)} variant="outline">
+                <Upload className="mr-2 h-4 w-4"/>
+                Upload Files
+            </Button>
             {selectedKeys.size > 0 && (
                 <Button onClick={handleDownloadSelected} disabled={isDownloading}>
                     {isDownloading ? <Loader2 className="mr-2 animate-spin"/> : <Download className="mr-2"/>}
@@ -316,8 +328,8 @@ export default function S3Browser({ config, onDisconnect }: S3BrowserProps) {
                     <TableCell>
                         <Checkbox 
                             checked={isSelected}
-                            onCheckedChange={(checked) => handleSelect(key, checked)}
-                            onClick={(e) => e.stopPropagation()}
+                            onCheckedChange={(checked: boolean) => handleSelect(key, checked)}
+                            onClick={(e: React.MouseEvent) => e.stopPropagation()}
                             aria-label={`Select ${key}`}
                         />
                     </TableCell>
@@ -365,7 +377,7 @@ export default function S3Browser({ config, onDisconnect }: S3BrowserProps) {
             </div>
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">Items per page:</span>
-              <Select value={itemsPerPage.toString()} onValueChange={(value) => setItemsPerPage(parseInt(value))}>
+              <Select value={itemsPerPage.toString()} onValueChange={(value: string) => setItemsPerPage(parseInt(value))}>
                 <SelectTrigger className="w-20">
                   <SelectValue />
                 </SelectTrigger>
@@ -453,6 +465,14 @@ export default function S3Browser({ config, onDisconnect }: S3BrowserProps) {
         bucketConfig={config}
         open={!!selectedItem}
         onOpenChange={(open) => !open && setSelectedItem(null)}
+      />
+      
+      <UploadDialog
+        open={uploadDialogOpen}
+        onOpenChange={setUploadDialogOpen}
+        bucketConfig={config}
+        currentPrefix={prefix}
+        onUploadComplete={handleUploadComplete}
       />
     </Card>
   );

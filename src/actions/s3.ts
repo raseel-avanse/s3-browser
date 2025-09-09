@@ -1,6 +1,6 @@
 'use server';
 
-import { S3Client, ListObjectsV2Command, GetObjectCommand, ListObjectsV2CommandOutput, _Object, GetObjectCommandOutput } from "@aws-sdk/client-s3";
+import { S3Client, ListObjectsV2Command, GetObjectCommand, ListObjectsV2CommandOutput, _Object, GetObjectCommandOutput, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { z } from "zod";
 import type { S3ClientConfig } from "@aws-sdk/client-s3";
@@ -176,4 +176,49 @@ export async function getItemsAsZip(config: Bucket, items: {key: string, type: '
     
     const content = await zip.generateAsync({ type: "base64" });
     return content;
+}
+
+export async function uploadObject(
+    config: Bucket, 
+    file: File, 
+    key: string,
+    onProgress?: (progress: number) => void
+): Promise<{ success: boolean; message: string }> {
+    try {
+        // Validate file size (100MB limit)
+        const maxSize = 100 * 1024 * 1024; // 100MB in bytes
+        if (file.size > maxSize) {
+            return { 
+                success: false, 
+                message: `File size (${(file.size / (1024 * 1024)).toFixed(2)}MB) exceeds the 100MB limit.` 
+            };
+        }
+
+        const s3Client = getS3Client(config);
+        
+        // Convert File to ArrayBuffer
+        const arrayBuffer = await file.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+
+        const command = new PutObjectCommand({
+            Bucket: config.bucket,
+            Key: key,
+            Body: buffer,
+            ContentType: file.type || 'application/octet-stream',
+            ContentLength: file.size,
+        });
+
+        await s3Client.send(command);
+        
+        return { 
+            success: true, 
+            message: `File "${file.name}" uploaded successfully.` 
+        };
+    } catch (error: any) {
+        console.error("Upload error:", error);
+        return { 
+            success: false, 
+            message: error.message || "Failed to upload file." 
+        };
+    }
 }
