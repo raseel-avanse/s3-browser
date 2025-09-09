@@ -14,7 +14,17 @@ import type { Bucket } from "@/context/BucketContext";
 import { ToastAction } from "@/components/ui/toast";
 import { Input } from "./ui/input";
 import { Checkbox } from "./ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { getItemsAsZip } from "@/actions/s3";
+import { 
+  Pagination, 
+  PaginationContent, 
+  PaginationEllipsis, 
+  PaginationItem, 
+  PaginationLink, 
+  PaginationNext, 
+  PaginationPrevious 
+} from "./ui/pagination";
 
 type S3Item = (_Object | CommonPrefix) & { type: 'file' | 'folder' };
 
@@ -60,6 +70,8 @@ export default function S3Browser({ config, onDisconnect }: S3BrowserProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
   const [isDownloading, setIsDownloading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   useEffect(() => {
     const s3ClientOptions: S3ClientConfig = {
@@ -151,7 +163,7 @@ export default function S3Browser({ config, onDisconnect }: S3BrowserProps) {
 
   const handleSelectAll = (checked: boolean | "indeterminate") => {
       if(checked) {
-        const allVisibleKeys = filteredItems.map(item => item.type === 'folder' ? (item as CommonPrefix).Prefix! : (item as _Object).Key!);
+        const allVisibleKeys = paginatedItems.map(item => item.type === 'folder' ? (item as CommonPrefix).Prefix! : (item as _Object).Key!);
         setSelectedKeys(new Set(allVisibleKeys));
       } else {
         setSelectedKeys(new Set());
@@ -200,8 +212,19 @@ export default function S3Browser({ config, onDisconnect }: S3BrowserProps) {
     });
   }, [items, searchQuery, prefix]);
 
-  const areAllVisibleSelected = filteredItems.length > 0 && selectedKeys.size === filteredItems.length && filteredItems.every(item => selectedKeys.has((item.type === 'folder' ? (item as CommonPrefix).Prefix : (item as _Object).Key)!));
-  const isAnyVisibleSelected = filteredItems.some(item => selectedKeys.has((item.type === 'folder' ? (item as CommonPrefix).Prefix : (item as _Object).Key)!));
+  // Pagination logic
+  const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedItems = filteredItems.slice(startIndex, endIndex);
+
+  // Reset to first page when search query, prefix, or items per page changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, prefix, itemsPerPage]);
+
+  const areAllVisibleSelected = paginatedItems.length > 0 && selectedKeys.size === paginatedItems.length && paginatedItems.every(item => selectedKeys.has((item.type === 'folder' ? (item as CommonPrefix).Prefix : (item as _Object).Key)!));
+  const isAnyVisibleSelected = paginatedItems.some(item => selectedKeys.has((item.type === 'folder' ? (item as CommonPrefix).Prefix : (item as _Object).Key)!));
 
   return (
     <Card className="w-full h-[95vh] max-w-7xl shadow-lg flex flex-col">
@@ -270,7 +293,7 @@ export default function S3Browser({ config, onDisconnect }: S3BrowserProps) {
                         onCheckedChange={handleSelectAll}
                         checked={areAllVisibleSelected ? true : isAnyVisibleSelected ? "indeterminate" : false}
                         aria-label="Select all"
-                        disabled={filteredItems.length === 0}
+                        disabled={paginatedItems.length === 0}
                     />
                 </TableHead>
                 <TableHead className="w-[50px]"></TableHead>
@@ -280,7 +303,7 @@ export default function S3Browser({ config, onDisconnect }: S3BrowserProps) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredItems.length > 0 ? filteredItems.map((item, index) => {
+              {paginatedItems.length > 0 ? paginatedItems.map((item, index) => {
                 const key = item.type === 'folder' ? (item as CommonPrefix).Prefix! : (item as _Object).Key!;
                 const isSelected = selectedKeys.has(key);
                 return (
@@ -332,6 +355,99 @@ export default function S3Browser({ config, onDisconnect }: S3BrowserProps) {
           </Table>
         )}
       </CardContent>
+      
+      {/* Pagination Controls */}
+      {filteredItems.length > 10 && (
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 py-3 border-t gap-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div className="text-sm text-muted-foreground">
+              Showing {startIndex + 1} to {Math.min(endIndex, filteredItems.length)} of {filteredItems.length} items
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Items per page:</span>
+              <Select value={itemsPerPage.toString()} onValueChange={(value) => setItemsPerPage(parseInt(value))}>
+                <SelectTrigger className="w-20">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="10">10</SelectItem>
+                  <SelectItem value="25">25</SelectItem>
+                  <SelectItem value="50">50</SelectItem>
+                  <SelectItem value="100">100</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          {totalPages > 1 && (
+            <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious 
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (currentPage > 1) {
+                      setCurrentPage(currentPage - 1);
+                    }
+                  }}
+                  className={currentPage <= 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                />
+              </PaginationItem>
+              
+              {/* Page numbers */}
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                let pageNum;
+                if (totalPages <= 5) {
+                  pageNum = i + 1;
+                } else if (currentPage <= 3) {
+                  pageNum = i + 1;
+                } else if (currentPage >= totalPages - 2) {
+                  pageNum = totalPages - 4 + i;
+                } else {
+                  pageNum = currentPage - 2 + i;
+                }
+                
+                return (
+                  <PaginationItem key={pageNum}>
+                    <PaginationLink
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setCurrentPage(pageNum);
+                      }}
+                      isActive={currentPage === pageNum}
+                      className="cursor-pointer"
+                    >
+                      {pageNum}
+                    </PaginationLink>
+                  </PaginationItem>
+                );
+              })}
+              
+              {totalPages > 5 && currentPage < totalPages - 2 && (
+                <PaginationItem>
+                  <PaginationEllipsis />
+                </PaginationItem>
+              )}
+              
+              <PaginationItem>
+                <PaginationNext 
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (currentPage < totalPages) {
+                      setCurrentPage(currentPage + 1);
+                    }
+                  }}
+                  className={currentPage >= totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+          )}
+        </div>
+      )}
+      
       <ObjectDetails 
         item={selectedItem}
         bucketConfig={config}
