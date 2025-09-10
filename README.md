@@ -1,4 +1,4 @@
-# Firebase Studio
+# S3 Browser
 
 This is a NextJS starter in Firebase Studio.
 
