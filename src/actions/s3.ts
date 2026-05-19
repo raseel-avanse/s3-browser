@@ -6,6 +6,8 @@ import { z } from "zod";
 import type { S3ClientConfig } from "@aws-sdk/client-s3";
 import type { Bucket } from "@/context/BucketContext";
 import JSZip from "jszip";
+import { getCurrentUserOptional } from "@/lib/session";
+import { createAuditLog } from "@/lib/audit";
 
 const S3ConfigSchema = z.object({
   accessKeyId: z.string().optional(),
@@ -114,6 +116,16 @@ export async function getObjectUrl(config: Bucket, key: string): Promise<string>
   const s3Client = getS3Client(config);
   const command = new GetObjectCommand({ Bucket: config.bucket, Key: key });
   const url = await getSignedUrl(s3Client, command, { expiresIn: 3600 }); // URL expires in 1 hour
+  const user = await getCurrentUserOptional();
+  await createAuditLog({
+    user_id: user?.id,
+    username: user?.username,
+    action: 'file.download',
+    resource_type: 's3_object',
+    resource_id: key,
+    details: { bucket: config.bucket, key, method: 'presigned_url' },
+    status: 'success',
+  });
   return url;
 }
 
@@ -127,6 +139,16 @@ export async function getObjectContent(
   const buffer = await streamToBuffer(response.Body);
   const base64 = buffer.toString("base64");
   const contentType = response.ContentType || "application/octet-stream";
+  const user = await getCurrentUserOptional();
+  await createAuditLog({
+    user_id: user?.id,
+    username: user?.username,
+    action: 'file.download',
+    resource_type: 's3_object',
+    resource_id: key,
+    details: { bucket: config.bucket, key, method: 'content', content_type: contentType },
+    status: 'success',
+  });
   return { base64, contentType };
 }
 
@@ -156,7 +178,7 @@ export async function getFolderContentsAsZip(config: Bucket, prefix: string): Pr
                 if (item.Key && item.Size! > 0) { // Don't add empty objects (like folders)
                     const getObjectCmd = new GetObjectCommand({ Bucket: config.bucket, Key: item.Key });
                     const objectResponse = await s3Client.send(getObjectCmd);
-                    
+
                     if (objectResponse.Body) {
                         const buffer = await streamToBuffer(objectResponse.Body);
                         // Make sure the path in zip is relative to the folder being downloaded
@@ -170,6 +192,16 @@ export async function getFolderContentsAsZip(config: Bucket, prefix: string): Pr
     } while (continuationToken);
 
     const content = await zip.generateAsync({ type: "base64" });
+    const user = await getCurrentUserOptional();
+    await createAuditLog({
+      user_id: user?.id,
+      username: user?.username,
+      action: 'file.download.folder',
+      resource_type: 's3_object',
+      resource_id: prefix,
+      details: { bucket: config.bucket, prefix },
+      status: 'success',
+    });
     return content;
 }
 
@@ -231,14 +263,28 @@ export async function getItemsAsZip(config: Bucket, items: {key: string, type: '
             }
         }
     }
-    
+
     const content = await zip.generateAsync({ type: "base64" });
+    const user = await getCurrentUserOptional();
+    await createAuditLog({
+      user_id: user?.id,
+      username: user?.username,
+      action: 'file.download.batch',
+      resource_type: 's3_object',
+      resource_id: config.bucket,
+      details: {
+        bucket: config.bucket,
+        item_count: items.length,
+        keys: items.map(i => i.key),
+      },
+      status: 'success',
+    });
     return content;
 }
 
 export async function uploadObject(
-    config: Bucket, 
-    file: File, 
+    config: Bucket,
+    file: File,
     key: string,
     onProgress?: (progress: number) => void
 ): Promise<{ success: boolean; message: string }> {
@@ -246,14 +292,14 @@ export async function uploadObject(
         // Validate file size (100MB limit)
         const maxSize = 100 * 1024 * 1024; // 100MB in bytes
         if (file.size > maxSize) {
-            return { 
-                success: false, 
-                message: `File size (${(file.size / (1024 * 1024)).toFixed(2)}MB) exceeds the 100MB limit.` 
+            return {
+                success: false,
+                message: `File size (${(file.size / (1024 * 1024)).toFixed(2)}MB) exceeds the 100MB limit.`
             };
         }
 
         const s3Client = getS3Client(config);
-        
+
         // Convert File to ArrayBuffer
         const arrayBuffer = await file.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
@@ -267,16 +313,32 @@ export async function uploadObject(
         });
 
         await s3Client.send(command);
-        
-        return { 
-            success: true, 
-            message: `File "${file.name}" uploaded successfully.` 
+
+        const user = await getCurrentUserOptional();
+        await createAuditLog({
+          user_id: user?.id,
+          username: user?.username,
+          action: 'file.upload',
+          resource_type: 's3_object',
+          resource_id: key,
+          details: {
+            bucket: config.bucket,
+            key,
+            size_bytes: file.size,
+            content_type: file.type || 'application/octet-stream',
+          },
+          status: 'success',
+        });
+
+        return {
+            success: true,
+            message: `File "${file.name}" uploaded successfully.`
         };
     } catch (error: any) {
         console.error("Upload error:", error);
-        return { 
-            success: false, 
-            message: error.message || "Failed to upload file." 
+        return {
+            success: false,
+            message: error.message || "Failed to upload file."
         };
     }
 }

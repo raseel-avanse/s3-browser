@@ -3,6 +3,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import { useBucketAssignment, type BucketPermission } from './BucketAssignmentContext';
+import { recordBucketEvent } from '@/actions/audit-record';
 
 export interface Bucket {
   id: string;
@@ -115,9 +116,11 @@ export function BucketProvider({ children }: { children: React.ReactNode }) {
       owner: user.username
     };
     setAllBucketsData(prev => [...prev, newBucket]);
-    import('@/actions/audit').then(({ writeAuditLog }) =>
-      writeAuditLog(user.username, 'BUCKET_CREATE', `Created bucket "${bucket.name}" (${bucket.bucket}) in ${bucket.region}`)
-    );
+    recordBucketEvent('bucket.created', newBucket.id, {
+      name: newBucket.name,
+      bucket: newBucket.bucket,
+      region: newBucket.region,
+    });
   };
 
   const updateBucket = (id: string, updatedBucket: Omit<Bucket, 'id'>) => {
@@ -125,11 +128,12 @@ export function BucketProvider({ children }: { children: React.ReactNode }) {
     setAllBucketsData(prev => prev.map(b =>
       b.id === id ? { ...updatedBucket, id, owner: b.owner } : b
     ));
-    if (user && existing) {
-      import('@/actions/audit').then(({ writeAuditLog }) =>
-        writeAuditLog(user.username, 'BUCKET_UPDATE', `Updated bucket "${existing.name}" (${id})`)
-      );
-    }
+    recordBucketEvent('bucket.updated', id, {
+      name: updatedBucket.name,
+      bucket: updatedBucket.bucket,
+      region: updatedBucket.region,
+      previous_name: existing?.name,
+    });
   };
 
   const deleteBucket = (id: string) => {
@@ -138,10 +142,12 @@ export function BucketProvider({ children }: { children: React.ReactNode }) {
     if (selectedBucket?.id === id) {
       setSelectedBucket(null);
     }
-    if (user && existing) {
-      import('@/actions/audit').then(({ writeAuditLog }) =>
-        writeAuditLog(user.username, 'BUCKET_DELETE', `Deleted bucket "${existing.name}" (${existing.bucket})`)
-      );
+    if (existing) {
+      recordBucketEvent('bucket.deleted', id, {
+        name: existing.name,
+        bucket: existing.bucket,
+        region: existing.region,
+      });
     }
   };
 
