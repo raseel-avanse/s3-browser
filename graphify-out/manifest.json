@@ -1,0 +1,602 @@
+{
+  "/home/raseel/code/s3-browser/components.json": {
+    "mtime": 1779210689.6817405,
+    "ast_hash": "d64ed1dcdd64e8e058fff89877b36c37",
+    "semantic_hash": "d64ed1dcdd64e8e058fff89877b36c37"
+  },
+  "/home/raseel/code/s3-browser/next-env.d.ts": {
+    "mtime": 1779211527.3094094,
+    "ast_hash": "a64595e6014adce3002d3bf762d2dbeb",
+    "semantic_hash": "a64595e6014adce3002d3bf762d2dbeb"
+  },
+  "/home/raseel/code/s3-browser/tailwind.config.ts": {
+    "mtime": 1779210689.729407,
+    "ast_hash": "d45f0ca5d4536365c42e319e4cf1d0c6",
+    "semantic_hash": "d45f0ca5d4536365c42e319e4cf1d0c6"
+  },
+  "/home/raseel/code/s3-browser/db.sh": {
+    "mtime": 1779210689.6817405,
+    "ast_hash": "ec77736424780a8db44d07d98a48208b",
+    "semantic_hash": "ec77736424780a8db44d07d98a48208b"
+  },
+  "/home/raseel/code/s3-browser/package.json": {
+    "mtime": 1779210689.6890738,
+    "ast_hash": "816ef12540ec3e735509a47543cb9248",
+    "semantic_hash": "816ef12540ec3e735509a47543cb9248"
+  },
+  "/home/raseel/code/s3-browser/postcss.config.mjs": {
+    "mtime": 1779210689.6890738,
+    "ast_hash": "b7941c02b947e17ae32f67ae7e664ec8",
+    "semantic_hash": "b7941c02b947e17ae32f67ae7e664ec8"
+  },
+  "/home/raseel/code/s3-browser/next.config.ts": {
+    "mtime": 1779210689.6854072,
+    "ast_hash": "181e98785199898e705603ba908b6929",
+    "semantic_hash": "181e98785199898e705603ba908b6929"
+  },
+  "/home/raseel/code/s3-browser/tsconfig.json": {
+    "mtime": 1779210689.729407,
+    "ast_hash": "0cf97a81150d3b8904f285780896980d",
+    "semantic_hash": "0cf97a81150d3b8904f285780896980d"
+  },
+  "/home/raseel/code/s3-browser/.vscode/settings.json": {
+    "mtime": 1779210689.674407,
+    "ast_hash": "45744d9ce7c1ae735ec1f6e0aec26d82",
+    "semantic_hash": "45744d9ce7c1ae735ec1f6e0aec26d82"
+  },
+  "/home/raseel/code/s3-browser/src/middleware.ts": {
+    "mtime": 1779210689.729407,
+    "ast_hash": "524216093a50d656ad8250f55960cf1d",
+    "semantic_hash": "524216093a50d656ad8250f55960cf1d"
+  },
+  "/home/raseel/code/s3-browser/src/ai/genkit.ts": {
+    "mtime": 1779210689.6927404,
+    "ast_hash": "af9eb64d5c117fc670ab6ee2261273c6",
+    "semantic_hash": "af9eb64d5c117fc670ab6ee2261273c6"
+  },
+  "/home/raseel/code/s3-browser/src/ai/dev.ts": {
+    "mtime": 1779210689.6927404,
+    "ast_hash": "63691f9d907f771b840d08ad1fe86cea",
+    "semantic_hash": "63691f9d907f771b840d08ad1fe86cea"
+  },
+  "/home/raseel/code/s3-browser/src/components/logo-upload.tsx": {
+    "mtime": 1779210689.7110739,
+    "ast_hash": "4dd237438ee94db87075b3123162319f",
+    "semantic_hash": "4dd237438ee94db87075b3123162319f"
+  },
+  "/home/raseel/code/s3-browser/src/components/upload-dialog.tsx": {
+    "mtime": 1779210689.7257404,
+    "ast_hash": "206e6efc6b2474621b67890e7f486b2b",
+    "semantic_hash": "206e6efc6b2474621b67890e7f486b2b"
+  },
+  "/home/raseel/code/s3-browser/src/components/app-sidebar.tsx": {
+    "mtime": 1779210689.707407,
+    "ast_hash": "a09539985b13cca6d978a44e9f67fd4c",
+    "semantic_hash": "a09539985b13cca6d978a44e9f67fd4c"
+  },
+  "/home/raseel/code/s3-browser/src/components/object-details.tsx": {
+    "mtime": 1779210689.7110739,
+    "ast_hash": "3424584f9920bd199abdcda9bfc18a24",
+    "semantic_hash": "3424584f9920bd199abdcda9bfc18a24"
+  },
+  "/home/raseel/code/s3-browser/src/components/site-logo.tsx": {
+    "mtime": 1779210689.7110739,
+    "ast_hash": "ce9b456152cc6502808faa736092e8a9",
+    "semantic_hash": "ce9b456152cc6502808faa736092e8a9"
+  },
+  "/home/raseel/code/s3-browser/src/components/s3-browser.tsx": {
+    "mtime": 1779210689.7110739,
+    "ast_hash": "f9efa2346c618a697c85a138b0f1fd2c",
+    "semantic_hash": "f9efa2346c618a697c85a138b0f1fd2c"
+  },
+  "/home/raseel/code/s3-browser/src/components/ui/select.tsx": {
+    "mtime": 1779210689.7184072,
+    "ast_hash": "03ecf87b3b0eff2ad63d279e3a6b6b9f",
+    "semantic_hash": "03ecf87b3b0eff2ad63d279e3a6b6b9f"
+  },
+  "/home/raseel/code/s3-browser/src/components/ui/input.tsx": {
+    "mtime": 1779210689.7147405,
+    "ast_hash": "c7cbc8cd45d01649277bd7107581cb36",
+    "semantic_hash": "c7cbc8cd45d01649277bd7107581cb36"
+  },
+  "/home/raseel/code/s3-browser/src/components/ui/pagination.tsx": {
+    "mtime": 1779210689.7147405,
+    "ast_hash": "de159ac89490951ee82b4991f604e394",
+    "semantic_hash": "de159ac89490951ee82b4991f604e394"
+  },
+  "/home/raseel/code/s3-browser/src/components/ui/popover.tsx": {
+    "mtime": 1779210689.7147405,
+    "ast_hash": "c8bf2474f9dd4584188af696af1fb0ad",
+    "semantic_hash": "c8bf2474f9dd4584188af696af1fb0ad"
+  },
+  "/home/raseel/code/s3-browser/src/components/ui/progress.tsx": {
+    "mtime": 1779210689.7147405,
+    "ast_hash": "f99d4c689a0cac272cb0b1e7ea222ba8",
+    "semantic_hash": "f99d4c689a0cac272cb0b1e7ea222ba8"
+  },
+  "/home/raseel/code/s3-browser/src/components/ui/collapsible.tsx": {
+    "mtime": 1779210689.7147405,
+    "ast_hash": "87cce2923d03d5560ae6838e54e87f60",
+    "semantic_hash": "87cce2923d03d5560ae6838e54e87f60"
+  },
+  "/home/raseel/code/s3-browser/src/components/ui/scroll-area.tsx": {
+    "mtime": 1779210689.7184072,
+    "ast_hash": "3205f3686c10fa46810af9db517d72dd",
+    "semantic_hash": "3205f3686c10fa46810af9db517d72dd"
+  },
+  "/home/raseel/code/s3-browser/src/components/ui/chart.tsx": {
+    "mtime": 1779210689.7147405,
+    "ast_hash": "48cf3765c84639f37af7b91ff3df5171",
+    "semantic_hash": "48cf3765c84639f37af7b91ff3df5171"
+  },
+  "/home/raseel/code/s3-browser/src/components/ui/textarea.tsx": {
+    "mtime": 1779210689.7257404,
+    "ast_hash": "b63a8a05a639e87859c69f452e11bc29",
+    "semantic_hash": "b63a8a05a639e87859c69f452e11bc29"
+  },
+  "/home/raseel/code/s3-browser/src/components/ui/table.tsx": {
+    "mtime": 1779210689.7184072,
+    "ast_hash": "efdbaeb9710b2f60de7c0e18bd4e3528",
+    "semantic_hash": "efdbaeb9710b2f60de7c0e18bd4e3528"
+  },
+  "/home/raseel/code/s3-browser/src/components/ui/menubar.tsx": {
+    "mtime": 1779210689.7147405,
+    "ast_hash": "58cf7fc18611a53a35131555279c211b",
+    "semantic_hash": "58cf7fc18611a53a35131555279c211b"
+  },
+  "/home/raseel/code/s3-browser/src/components/ui/radio-group.tsx": {
+    "mtime": 1779210689.7147405,
+    "ast_hash": "58ddcb1875be36f21402c1ddcc328867",
+    "semantic_hash": "58ddcb1875be36f21402c1ddcc328867"
+  },
+  "/home/raseel/code/s3-browser/src/components/ui/tooltip.tsx": {
+    "mtime": 1779210689.7257404,
+    "ast_hash": "0b8fb484cf602fe973d2e0f2f39973fb",
+    "semantic_hash": "0b8fb484cf602fe973d2e0f2f39973fb"
+  },
+  "/home/raseel/code/s3-browser/src/components/ui/dropdown-menu.tsx": {
+    "mtime": 1779210689.7147405,
+    "ast_hash": "f5ec5c19d1c912a1f62695ec8556a284",
+    "semantic_hash": "f5ec5c19d1c912a1f62695ec8556a284"
+  },
+  "/home/raseel/code/s3-browser/src/components/ui/breadcrumb.tsx": {
+    "mtime": 1779210689.7110739,
+    "ast_hash": "707300b1c0b07f8cfb98b2ee52ae696b",
+    "semantic_hash": "707300b1c0b07f8cfb98b2ee52ae696b"
+  },
+  "/home/raseel/code/s3-browser/src/components/ui/sheet.tsx": {
+    "mtime": 1779210689.7184072,
+    "ast_hash": "9ef21bceff143bfe214ff398ec382dc5",
+    "semantic_hash": "9ef21bceff143bfe214ff398ec382dc5"
+  },
+  "/home/raseel/code/s3-browser/src/components/ui/button.tsx": {
+    "mtime": 1779210689.7110739,
+    "ast_hash": "33f8ef5c351115f8904b2a2f3decef54",
+    "semantic_hash": "33f8ef5c351115f8904b2a2f3decef54"
+  },
+  "/home/raseel/code/s3-browser/src/components/ui/toast.tsx": {
+    "mtime": 1779210689.7257404,
+    "ast_hash": "5a15d9a75bd97d235ce318efc84134c6",
+    "semantic_hash": "5a15d9a75bd97d235ce318efc84134c6"
+  },
+  "/home/raseel/code/s3-browser/src/components/ui/skeleton.tsx": {
+    "mtime": 1779210689.7184072,
+    "ast_hash": "a5a4d6d5551d4c7feb8176a23e7eb07c",
+    "semantic_hash": "a5a4d6d5551d4c7feb8176a23e7eb07c"
+  },
+  "/home/raseel/code/s3-browser/src/components/ui/sidebar.tsx": {
+    "mtime": 1779210689.7184072,
+    "ast_hash": "2706af11f2ddba94a367c2a2f8227503",
+    "semantic_hash": "2706af11f2ddba94a367c2a2f8227503"
+  },
+  "/home/raseel/code/s3-browser/src/components/ui/badge.tsx": {
+    "mtime": 1779210689.7110739,
+    "ast_hash": "f9c097d427c421f83eb92772a4b8ec06",
+    "semantic_hash": "f9c097d427c421f83eb92772a4b8ec06"
+  },
+  "/home/raseel/code/s3-browser/src/components/ui/switch.tsx": {
+    "mtime": 1779210689.7184072,
+    "ast_hash": "368340dd3f28bce468a5ffdebb321520",
+    "semantic_hash": "368340dd3f28bce468a5ffdebb321520"
+  },
+  "/home/raseel/code/s3-browser/src/components/ui/avatar.tsx": {
+    "mtime": 1779210689.7110739,
+    "ast_hash": "0008445bf0b90f231d702bcd9141726c",
+    "semantic_hash": "0008445bf0b90f231d702bcd9141726c"
+  },
+  "/home/raseel/code/s3-browser/src/components/ui/alert-dialog.tsx": {
+    "mtime": 1779210689.7110739,
+    "ast_hash": "7ea51ecae01882dedbbf317c61624f4a",
+    "semantic_hash": "7ea51ecae01882dedbbf317c61624f4a"
+  },
+  "/home/raseel/code/s3-browser/src/components/ui/accordion.tsx": {
+    "mtime": 1779210689.7110739,
+    "ast_hash": "561bb8af4899db592c7623851235979a",
+    "semantic_hash": "561bb8af4899db592c7623851235979a"
+  },
+  "/home/raseel/code/s3-browser/src/components/ui/carousel.tsx": {
+    "mtime": 1779210689.7147405,
+    "ast_hash": "8b579b3df0997a3ef3924099697a3670",
+    "semantic_hash": "8b579b3df0997a3ef3924099697a3670"
+  },
+  "/home/raseel/code/s3-browser/src/components/ui/separator.tsx": {
+    "mtime": 1779210689.7184072,
+    "ast_hash": "85fd1a835601a122f1f226ccb31a0d67",
+    "semantic_hash": "85fd1a835601a122f1f226ccb31a0d67"
+  },
+  "/home/raseel/code/s3-browser/src/components/ui/slider.tsx": {
+    "mtime": 1779210689.7184072,
+    "ast_hash": "6920b37928705eb8de5ca91ba528225d",
+    "semantic_hash": "6920b37928705eb8de5ca91ba528225d"
+  },
+  "/home/raseel/code/s3-browser/src/components/ui/card.tsx": {
+    "mtime": 1779210689.7147405,
+    "ast_hash": "4be937e00a434ffa44e7f0e82ae79d17",
+    "semantic_hash": "4be937e00a434ffa44e7f0e82ae79d17"
+  },
+  "/home/raseel/code/s3-browser/src/components/ui/toaster.tsx": {
+    "mtime": 1779210689.7257404,
+    "ast_hash": "fcdccc15f76eb7acaa4e68813634da20",
+    "semantic_hash": "fcdccc15f76eb7acaa4e68813634da20"
+  },
+  "/home/raseel/code/s3-browser/src/components/ui/alert.tsx": {
+    "mtime": 1779210689.7110739,
+    "ast_hash": "48dac79c18e0c3ff687c320c6fcf1590",
+    "semantic_hash": "48dac79c18e0c3ff687c320c6fcf1590"
+  },
+  "/home/raseel/code/s3-browser/src/components/ui/tabs.tsx": {
+    "mtime": 1779210689.7257404,
+    "ast_hash": "2dbb55bc73557d9794b1f166bb7e903b",
+    "semantic_hash": "2dbb55bc73557d9794b1f166bb7e903b"
+  },
+  "/home/raseel/code/s3-browser/src/components/ui/form.tsx": {
+    "mtime": 1779210689.7147405,
+    "ast_hash": "1df53cf0afd884a27f799b2ce9917799",
+    "semantic_hash": "1df53cf0afd884a27f799b2ce9917799"
+  },
+  "/home/raseel/code/s3-browser/src/components/ui/calendar.tsx": {
+    "mtime": 1779210689.7147405,
+    "ast_hash": "8ac9efb2b5d134009a2ca4b99586910d",
+    "semantic_hash": "8ac9efb2b5d134009a2ca4b99586910d"
+  },
+  "/home/raseel/code/s3-browser/src/components/ui/dialog.tsx": {
+    "mtime": 1779210689.7147405,
+    "ast_hash": "1cee7ad259ba50554280a78f4a280f8c",
+    "semantic_hash": "1cee7ad259ba50554280a78f4a280f8c"
+  },
+  "/home/raseel/code/s3-browser/src/components/ui/label.tsx": {
+    "mtime": 1779210689.7147405,
+    "ast_hash": "14579f07e6e3133b6ee65d3ec778b013",
+    "semantic_hash": "14579f07e6e3133b6ee65d3ec778b013"
+  },
+  "/home/raseel/code/s3-browser/src/components/ui/checkbox.tsx": {
+    "mtime": 1779210689.7147405,
+    "ast_hash": "83336efee701dce6b2b2f6490e6d61dd",
+    "semantic_hash": "83336efee701dce6b2b2f6490e6d61dd"
+  },
+  "/home/raseel/code/s3-browser/src/actions/s3.ts": {
+    "mtime": 1779210689.6927404,
+    "ast_hash": "ed8855d8c535a68f888ee0c2fbda0b64",
+    "semantic_hash": "ed8855d8c535a68f888ee0c2fbda0b64"
+  },
+  "/home/raseel/code/s3-browser/src/actions/audit.ts": {
+    "mtime": 1779210689.6927404,
+    "ast_hash": "f4cd923e32a0fe454c6e160e7c93faff",
+    "semantic_hash": "f4cd923e32a0fe454c6e160e7c93faff"
+  },
+  "/home/raseel/code/s3-browser/src/actions/logo.ts": {
+    "mtime": 1779210689.6927404,
+    "ast_hash": "8dba2babced340b9796fe48cc5ee65e2",
+    "semantic_hash": "8dba2babced340b9796fe48cc5ee65e2"
+  },
+  "/home/raseel/code/s3-browser/src/context/AuthContext.tsx": {
+    "mtime": 1779210689.7257404,
+    "ast_hash": "e5f4f3dceb86436fa3cf9afa9165c282",
+    "semantic_hash": "e5f4f3dceb86436fa3cf9afa9165c282"
+  },
+  "/home/raseel/code/s3-browser/src/context/BucketContext.tsx": {
+    "mtime": 1779210689.7257404,
+    "ast_hash": "1b9788e20aca5193639edef5dc9e5faa",
+    "semantic_hash": "1b9788e20aca5193639edef5dc9e5faa"
+  },
+  "/home/raseel/code/s3-browser/src/context/UserContext.tsx": {
+    "mtime": 1779210689.7257404,
+    "ast_hash": "b6eedb3ed77c7e0a19f5b30ee6fd7a7f",
+    "semantic_hash": "b6eedb3ed77c7e0a19f5b30ee6fd7a7f"
+  },
+  "/home/raseel/code/s3-browser/src/context/BucketContext.new.tsx": {
+    "mtime": 1779210689.7257404,
+    "ast_hash": "202eac509b981ba739c624f2e58a729d",
+    "semantic_hash": "202eac509b981ba739c624f2e58a729d"
+  },
+  "/home/raseel/code/s3-browser/src/context/BucketAssignmentContext.tsx": {
+    "mtime": 1779210689.7257404,
+    "ast_hash": "73519b4fb609f4a5601e063e9c102922",
+    "semantic_hash": "73519b4fb609f4a5601e063e9c102922"
+  },
+  "/home/raseel/code/s3-browser/src/app/page.tsx": {
+    "mtime": 1779210689.707407,
+    "ast_hash": "58b5399fd6e38911de8587011bdc13fd",
+    "semantic_hash": "58b5399fd6e38911de8587011bdc13fd"
+  },
+  "/home/raseel/code/s3-browser/src/app/layout.tsx": {
+    "mtime": 1779210689.707407,
+    "ast_hash": "e4b808a5f1d1b2dddeeccc2d99cd225c",
+    "semantic_hash": "e4b808a5f1d1b2dddeeccc2d99cd225c"
+  },
+  "/home/raseel/code/s3-browser/src/app/buckets/[id]/page.tsx": {
+    "mtime": 1779210689.707407,
+    "ast_hash": "935eb6846e81512e40a476b86004460a",
+    "semantic_hash": "935eb6846e81512e40a476b86004460a"
+  },
+  "/home/raseel/code/s3-browser/src/app/admin/page.tsx": {
+    "mtime": 1779210689.6927404,
+    "ast_hash": "f402ed6264505bd45024a80c16b23ee0",
+    "semantic_hash": "f402ed6264505bd45024a80c16b23ee0"
+  },
+  "/home/raseel/code/s3-browser/src/app/admin/audit/page.tsx": {
+    "mtime": 1779210689.6927404,
+    "ast_hash": "9dbc527d89aaf817ca7212f8d3da30ad",
+    "semantic_hash": "9dbc527d89aaf817ca7212f8d3da30ad"
+  },
+  "/home/raseel/code/s3-browser/src/app/profile/page.tsx": {
+    "mtime": 1779210689.707407,
+    "ast_hash": "268d54433d0b3a40bea5c97d4d0f9784",
+    "semantic_hash": "268d54433d0b3a40bea5c97d4d0f9784"
+  },
+  "/home/raseel/code/s3-browser/src/app/users/page.tsx": {
+    "mtime": 1779210689.707407,
+    "ast_hash": "3958b7e9123154088cf711ff8927a646",
+    "semantic_hash": "3958b7e9123154088cf711ff8927a646"
+  },
+  "/home/raseel/code/s3-browser/src/app/change-password/page.tsx": {
+    "mtime": 1779210689.707407,
+    "ast_hash": "69d42316b91b9f2ef65f9536fe5bfcb2",
+    "semantic_hash": "69d42316b91b9f2ef65f9536fe5bfcb2"
+  },
+  "/home/raseel/code/s3-browser/src/app/bucket-assignments/page.tsx": {
+    "mtime": 1779210689.7037404,
+    "ast_hash": "aea9bc28a9a8fdf1cbacab2bf92da48a",
+    "semantic_hash": "aea9bc28a9a8fdf1cbacab2bf92da48a"
+  },
+  "/home/raseel/code/s3-browser/src/app/login/page.tsx": {
+    "mtime": 1779210689.707407,
+    "ast_hash": "18843907a8a48c9b16b8220f5d8ceba3",
+    "semantic_hash": "18843907a8a48c9b16b8220f5d8ceba3"
+  },
+  "/home/raseel/code/s3-browser/src/app/api/buckets/route.ts": {
+    "mtime": 1779210689.7037404,
+    "ast_hash": "65d6b7c5f00e6512ec8432750509d450",
+    "semantic_hash": "65d6b7c5f00e6512ec8432750509d450"
+  },
+  "/home/raseel/code/s3-browser/src/app/api/buckets/[id]/route.ts": {
+    "mtime": 1779210689.7037404,
+    "ast_hash": "4bb1b81f4f710f2f4e498d3bd996516c",
+    "semantic_hash": "4bb1b81f4f710f2f4e498d3bd996516c"
+  },
+  "/home/raseel/code/s3-browser/src/app/api/auth/logout/route.ts": {
+    "mtime": 1779210689.696407,
+    "ast_hash": "55e0f5c4a0d198688611097c50465b4a",
+    "semantic_hash": "55e0f5c4a0d198688611097c50465b4a"
+  },
+  "/home/raseel/code/s3-browser/src/app/api/auth/session/route.ts": {
+    "mtime": 1779210689.7000737,
+    "ast_hash": "fc628d2a4cce936a41b50a3e0eec7450",
+    "semantic_hash": "fc628d2a4cce936a41b50a3e0eec7450"
+  },
+  "/home/raseel/code/s3-browser/src/app/api/auth/change-password/route.ts": {
+    "mtime": 1779210689.696407,
+    "ast_hash": "63a0153ff69be52a2efc9c109cd276cb",
+    "semantic_hash": "63a0153ff69be52a2efc9c109cd276cb"
+  },
+  "/home/raseel/code/s3-browser/src/app/api/auth/login/route.ts": {
+    "mtime": 1779210689.696407,
+    "ast_hash": "73f17f1607b38e12e38899e813fcbdfd",
+    "semantic_hash": "73f17f1607b38e12e38899e813fcbdfd"
+  },
+  "/home/raseel/code/s3-browser/src/app/api/users/route.ts": {
+    "mtime": 1779210689.7037404,
+    "ast_hash": "f64587c47e9e3eb8b66143c778cadbab",
+    "semantic_hash": "f64587c47e9e3eb8b66143c778cadbab"
+  },
+  "/home/raseel/code/s3-browser/src/app/api/users/[id]/route.ts": {
+    "mtime": 1779210689.7037404,
+    "ast_hash": "fbf31dbc2c55e58d2a6df7d855c29579",
+    "semantic_hash": "fbf31dbc2c55e58d2a6df7d855c29579"
+  },
+  "/home/raseel/code/s3-browser/src/app/api/users/[id]/reset-password/route.ts": {
+    "mtime": 1779210689.7037404,
+    "ast_hash": "e152aa110f27a16e9afb3424e17bae64",
+    "semantic_hash": "e152aa110f27a16e9afb3424e17bae64"
+  },
+  "/home/raseel/code/s3-browser/src/app/api/users/[id]/toggle-status/route.ts": {
+    "mtime": 1779210689.7037404,
+    "ast_hash": "daef44c442bcf58a18c01e7de9d51e19",
+    "semantic_hash": "daef44c442bcf58a18c01e7de9d51e19"
+  },
+  "/home/raseel/code/s3-browser/src/app/api/audit/route.ts": {
+    "mtime": 1779210689.696407,
+    "ast_hash": "7e5d50e7364649029d5b7bdb6a7a2c57",
+    "semantic_hash": "7e5d50e7364649029d5b7bdb6a7a2c57"
+  },
+  "/home/raseel/code/s3-browser/src/app/api/audit/stats/route.ts": {
+    "mtime": 1779210689.696407,
+    "ast_hash": "fcc50c26646aab84436f3089715faa3c",
+    "semantic_hash": "fcc50c26646aab84436f3089715faa3c"
+  },
+  "/home/raseel/code/s3-browser/src/lib/session.ts": {
+    "mtime": 1779210689.729407,
+    "ast_hash": "09c8f65ecfc2dc661630fd4c669644f1",
+    "semantic_hash": "09c8f65ecfc2dc661630fd4c669644f1"
+  },
+  "/home/raseel/code/s3-browser/src/lib/auth.ts": {
+    "mtime": 1779210689.7257404,
+    "ast_hash": "b775c6126bbb1a7906b5a87ef88a3f83",
+    "semantic_hash": "b775c6126bbb1a7906b5a87ef88a3f83"
+  },
+  "/home/raseel/code/s3-browser/src/lib/utils.ts": {
+    "mtime": 1779210689.729407,
+    "ast_hash": "e834d99711fd95a0166fe1c46651a35f",
+    "semantic_hash": "e834d99711fd95a0166fe1c46651a35f"
+  },
+  "/home/raseel/code/s3-browser/src/lib/buckets.ts": {
+    "mtime": 1779210689.7257404,
+    "ast_hash": "0da29ade5b02dde9c44406d5cd639a57",
+    "semantic_hash": "0da29ade5b02dde9c44406d5cd639a57"
+  },
+  "/home/raseel/code/s3-browser/src/lib/db.ts": {
+    "mtime": 1779210689.729407,
+    "ast_hash": "6f24fae3e6cf426a81aa4a7b7fac9517",
+    "semantic_hash": "6f24fae3e6cf426a81aa4a7b7fac9517"
+  },
+  "/home/raseel/code/s3-browser/src/lib/audit.ts": {
+    "mtime": 1779210689.7257404,
+    "ast_hash": "c86934eb9fbb21a5672f3d5dce95b7a9",
+    "semantic_hash": "c86934eb9fbb21a5672f3d5dce95b7a9"
+  },
+  "/home/raseel/code/s3-browser/src/lib/encryption.ts": {
+    "mtime": 1779210689.729407,
+    "ast_hash": "c93656dd546dac2f6a273ebbb8f77fc5",
+    "semantic_hash": "c93656dd546dac2f6a273ebbb8f77fc5"
+  },
+  "/home/raseel/code/s3-browser/src/lib/users.ts": {
+    "mtime": 1779210689.729407,
+    "ast_hash": "85cff039097108c4cb97c8dc2e904ffd",
+    "semantic_hash": "85cff039097108c4cb97c8dc2e904ffd"
+  },
+  "/home/raseel/code/s3-browser/src/hooks/use-permission.ts": {
+    "mtime": 1779210689.7257404,
+    "ast_hash": "d927dac8478bf2b441246a5c05c20b85",
+    "semantic_hash": "d927dac8478bf2b441246a5c05c20b85"
+  },
+  "/home/raseel/code/s3-browser/src/hooks/use-mobile.tsx": {
+    "mtime": 1779210689.7257404,
+    "ast_hash": "209b5193af16624cdd89d3591480dd48",
+    "semantic_hash": "209b5193af16624cdd89d3591480dd48"
+  },
+  "/home/raseel/code/s3-browser/src/hooks/use-toast.ts": {
+    "mtime": 1779210689.7257404,
+    "ast_hash": "61b2fb36e04dc194fdec392781c63c43",
+    "semantic_hash": "61b2fb36e04dc194fdec392781c63c43"
+  },
+  "/home/raseel/code/s3-browser/scripts/schema.sql": {
+    "mtime": 1779210689.6890738,
+    "ast_hash": "930be053b9abfa2796929641e9caeb81",
+    "semantic_hash": "930be053b9abfa2796929641e9caeb81"
+  },
+  "/home/raseel/code/s3-browser/scripts/migrate-localstorage.js": {
+    "mtime": 1779210689.6890738,
+    "ast_hash": "ec419ff51f8d0b32f993d4dfcad06e98",
+    "semantic_hash": "ec419ff51f8d0b32f993d4dfcad06e98"
+  },
+  "/home/raseel/code/s3-browser/scripts/migrate.js": {
+    "mtime": 1779210689.6890738,
+    "ast_hash": "de4579426a4079bf4df59104c6e002cb",
+    "semantic_hash": "de4579426a4079bf4df59104c6e002cb"
+  },
+  "/home/raseel/code/s3-browser/scripts/reset.js": {
+    "mtime": 1779210689.6890738,
+    "ast_hash": "e333dd8504530452a08f3fb6b739a5bc",
+    "semantic_hash": "e333dd8504530452a08f3fb6b739a5bc"
+  },
+  "/home/raseel/code/s3-browser/scripts/generate-keys.js": {
+    "mtime": 1779210689.6890738,
+    "ast_hash": "2125e6b2b586650cb2963562163689b5",
+    "semantic_hash": "2125e6b2b586650cb2963562163689b5"
+  },
+  "/home/raseel/code/s3-browser/scripts/seed.js": {
+    "mtime": 1779210689.6927404,
+    "ast_hash": "e3f3ee60760e529d9f4a05fef70dab69",
+    "semantic_hash": "e3f3ee60760e529d9f4a05fef70dab69"
+  },
+  "/home/raseel/code/s3-browser/apphosting.yaml": {
+    "mtime": 1779210689.6817405,
+    "ast_hash": "66b66dcf03140222743f6d18e119e729",
+    "semantic_hash": "66b66dcf03140222743f6d18e119e729"
+  },
+  "/home/raseel/code/s3-browser/QUICKSTART.md": {
+    "mtime": 1779210689.674407,
+    "ast_hash": "ae7ba160b68590e78ddd76828d15df95",
+    "semantic_hash": "ae7ba160b68590e78ddd76828d15df95"
+  },
+  "/home/raseel/code/s3-browser/docker-compose.yml": {
+    "mtime": 1779210689.6817405,
+    "ast_hash": "f66a335c1fff96c1bea9f596ed5433f1",
+    "semantic_hash": "f66a335c1fff96c1bea9f596ed5433f1"
+  },
+  "/home/raseel/code/s3-browser/docker-compose.db.yml": {
+    "mtime": 1779210689.6817405,
+    "ast_hash": "4e692a01436f8c6c5b601c64fda2e37c",
+    "semantic_hash": "4e692a01436f8c6c5b601c64fda2e37c"
+  },
+  "/home/raseel/code/s3-browser/README.md": {
+    "mtime": 1779210689.6817405,
+    "ast_hash": "28ab40b4d9f4bd546d733644b2e52f1a",
+    "semantic_hash": "28ab40b4d9f4bd546d733644b2e52f1a"
+  },
+  "/home/raseel/code/s3-browser/docs/PHASE2_TESTING.md": {
+    "mtime": 1779210689.6854072,
+    "ast_hash": "47ad8872c7d57f10ae167ce09467d61b",
+    "semantic_hash": "47ad8872c7d57f10ae167ce09467d61b"
+  },
+  "/home/raseel/code/s3-browser/docs/replit.md": {
+    "mtime": 1779210689.6854072,
+    "ast_hash": "6a1f8e6d7b5715522866416424256ad7",
+    "semantic_hash": "6a1f8e6d7b5715522866416424256ad7"
+  },
+  "/home/raseel/code/s3-browser/docs/PHASE1_TESTING.md": {
+    "mtime": 1779210689.6854072,
+    "ast_hash": "33f1e65027fd066c8980f61655a3265c",
+    "semantic_hash": "33f1e65027fd066c8980f61655a3265c"
+  },
+  "/home/raseel/code/s3-browser/docs/BUCKET_ASSIGNMENTS_FEATURE.md": {
+    "mtime": 1779210689.6817405,
+    "ast_hash": "87be5fe9c6391c63eb1d9ee3597e94bf",
+    "semantic_hash": "87be5fe9c6391c63eb1d9ee3597e94bf"
+  },
+  "/home/raseel/code/s3-browser/docs/MIGRATION_GUIDE.md": {
+    "mtime": 1779210689.6854072,
+    "ast_hash": "dc8ec7d8119ba7ba834ec19228a2c533",
+    "semantic_hash": "dc8ec7d8119ba7ba834ec19228a2c533"
+  },
+  "/home/raseel/code/s3-browser/docs/PHASE3_STATUS.md": {
+    "mtime": 1779210689.6854072,
+    "ast_hash": "3409e5c645c595bb8e57a16a89a02501",
+    "semantic_hash": "3409e5c645c595bb8e57a16a89a02501"
+  },
+  "/home/raseel/code/s3-browser/docs/SETUP.md": {
+    "mtime": 1779210689.6854072,
+    "ast_hash": "3fcf0078568a29670689ff655de858ce",
+    "semantic_hash": "3fcf0078568a29670689ff655de858ce"
+  },
+  "/home/raseel/code/s3-browser/docs/DATABASE.md": {
+    "mtime": 1779210689.6817405,
+    "ast_hash": "410ee3ee3c5f721303883747139e8939",
+    "semantic_hash": "410ee3ee3c5f721303883747139e8939"
+  },
+  "/home/raseel/code/s3-browser/docs/DOCKER.md": {
+    "mtime": 1779210689.6817405,
+    "ast_hash": "b7b16643013947d5e47a9efc74d260a5",
+    "semantic_hash": "b7b16643013947d5e47a9efc74d260a5"
+  },
+  "/home/raseel/code/s3-browser/docs/DATABASE_TODO.md": {
+    "mtime": 1779210689.6817405,
+    "ast_hash": "dfce85b8788f883e06be425c9b878b8e",
+    "semantic_hash": "dfce85b8788f883e06be425c9b878b8e"
+  },
+  "/home/raseel/code/s3-browser/docs/blueprint.md": {
+    "mtime": 1779210689.6854072,
+    "ast_hash": "f4888719063675ada6ca538d62e5329e",
+    "semantic_hash": "f4888719063675ada6ca538d62e5329e"
+  },
+  "/home/raseel/code/s3-browser/docs/SETUP_SUMMARY.md": {
+    "mtime": 1779210689.6854072,
+    "ast_hash": "754f9625b5cd9e642fa9c53432b43b46",
+    "semantic_hash": "754f9625b5cd9e642fa9c53432b43b46"
+  },
+  "/home/raseel/code/s3-browser/.idx/icon.png": {
+    "mtime": 1779210689.674407,
+    "ast_hash": "57c120ddfef413af2e1dbaedfa6affe3",
+    "semantic_hash": "57c120ddfef413af2e1dbaedfa6affe3"
+  }
+}
