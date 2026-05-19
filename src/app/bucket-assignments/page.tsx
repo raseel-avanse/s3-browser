@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Trash2, UserPlus, Shield } from 'lucide-react';
-import { writeAuditLog } from '@/actions/audit';
+import { recordBucketAssignment } from '@/actions/audit-record';
 import { AppSidebar } from '@/components/app-sidebar';
 
 type UserRole = 'viewer' | 'uploader' | 'bucket-creator' | 'admin';
@@ -85,21 +85,15 @@ export default function BucketAssignmentsPage() {
     if (!selectedBucketId || !selectedUsername) return;
     // Assign with a neutral permission value — role governs actual access
     assignUserToBucket(selectedBucketId, selectedUsername, 'read-write');
-    await writeAuditLog(
-      user?.username ?? 'admin',
-      'BUCKET_ASSIGN',
-      `Assigned user "${selectedUsername}" to bucket "${allBuckets.find(b => b.id === selectedBucketId)?.name ?? selectedBucketId}"`
-    );
+    const bucketName = allBuckets.find(b => b.id === selectedBucketId)?.name ?? selectedBucketId;
+    await recordBucketAssignment(selectedBucketId, bucketName, selectedUsername, 'bucket.assigned');
     setSelectedUsername('');
   };
 
   const handleRemoveUser = async (bucketId: string, username: string) => {
     removeUserFromBucket(bucketId, username);
-    await writeAuditLog(
-      user?.username ?? 'admin',
-      'BUCKET_UNASSIGN',
-      `Removed user "${username}" from bucket "${allBuckets.find(b => b.id === bucketId)?.name ?? bucketId}"`
-    );
+    const bucketName = allBuckets.find(b => b.id === bucketId)?.name ?? bucketId;
+    await recordBucketAssignment(bucketId, bucketName, username, 'bucket.unassigned');
   };
 
   return (

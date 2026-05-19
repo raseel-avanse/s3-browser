@@ -31,6 +31,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50', 10);
     const offset = parseInt(searchParams.get('offset') || '0', 10);
     const userId = searchParams.get('userId') ? parseInt(searchParams.get('userId')!, 10) : undefined;
+    const username = searchParams.get('username') || undefined;
     const action = searchParams.get('action') || undefined;
     const resourceType = searchParams.get('resourceType') || undefined;
     const startDate = searchParams.get('startDate') ? new Date(searchParams.get('startDate')!) : undefined;
@@ -40,6 +41,7 @@ export async function GET(request: NextRequest) {
       limit,
       offset,
       userId,
+      username,
       action,
       resourceType,
       startDate,

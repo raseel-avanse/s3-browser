@@ -3,7 +3,8 @@
 import { writeFile, readFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { existsSync } from 'fs';
-import { writeAuditLog } from './audit';
+import { getCurrentUserOptional } from '@/lib/session';
+import { createAuditLog } from '@/lib/audit';
 
 const LOGO_DIR = join(process.cwd(), 'public', 'uploads');
 const LOGO_PATH = join(LOGO_DIR, 'logo.png');
@@ -30,7 +31,15 @@ export async function uploadLogo(formData: FormData, actor: string): Promise<{ s
     // Save meta
     await writeFile(META_PATH, JSON.stringify({ url: `/uploads/${filename}`, updatedAt: new Date().toISOString() }));
 
-    await writeAuditLog(actor, 'LOGO_UPLOAD', `Logo uploaded: ${filename} (${(file.size / 1024).toFixed(1)}KB)`);
+    const user = await getCurrentUserOptional();
+    await createAuditLog({
+      user_id: user?.id,
+      username: actor,
+      action: 'settings.logo_upload',
+      resource_type: 'settings',
+      details: { filename, size_kb: parseFloat((file.size / 1024).toFixed(1)) },
+      status: 'success',
+    });
     return { success: true, url: `/uploads/${filename}` };
   } catch (err) {
     console.error('[Logo] Upload error:', err);
@@ -52,7 +61,14 @@ export async function removeLogo(actor: string): Promise<void> {
   try {
     const { unlink } = await import('fs/promises');
     if (existsSync(META_PATH)) await unlink(META_PATH);
-    await writeAuditLog(actor, 'LOGO_REMOVE', 'Logo removed');
+    const user = await getCurrentUserOptional();
+    await createAuditLog({
+      user_id: user?.id,
+      username: actor,
+      action: 'settings.logo_remove',
+      resource_type: 'settings',
+      status: 'success',
+    });
   } catch (err) {
     console.error('[Logo] Remove error:', err);
   }

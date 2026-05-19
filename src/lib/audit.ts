@@ -53,12 +53,13 @@ export async function getAuditLogs(options: {
   limit?: number;
   offset?: number;
   userId?: number;
+  username?: string;
   action?: string;
   resourceType?: string;
   startDate?: Date;
   endDate?: Date;
 }): Promise<{ logs: AuditLog[]; total: number }> {
-  const { limit = 50, offset = 0, userId, action, resourceType, startDate, endDate } = options;
+  const { limit = 50, offset = 0, userId, username, action, resourceType, startDate, endDate } = options;
 
   let whereConditions: string[] = [];
   let params: any[] = [];
@@ -67,6 +68,11 @@ export async function getAuditLogs(options: {
   if (userId) {
     whereConditions.push(`user_id = $${paramIndex++}`);
     params.push(userId);
+  }
+
+  if (username) {
+    whereConditions.push(`username = $${paramIndex++}`);
+    params.push(username);
   }
 
   if (action) {
