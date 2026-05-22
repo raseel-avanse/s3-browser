@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(ls /home/raseel/code/s3-browser/graphify-out/ 2>/dev/null || mkdir -p /home/raseel/code/s3-browser/graphify-out)"
+      "Bash(ls /home/raseel/code/s3-browser/graphify-out/ 2>/dev/null || mkdir -p /home/raseel/code/s3-browser/graphify-out)",
+      "Bash(node -e \"require\\('ldapts'\\); console.log\\('ok'\\)\")"
     ],
     "additionalDirectories": [
       "/home/raseel/code/s3-browser/graphify-out"

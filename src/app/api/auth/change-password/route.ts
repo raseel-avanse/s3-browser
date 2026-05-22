@@ -16,6 +16,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
     }
 
+    if (user.auth_provider === 'ldap') {
+      return NextResponse.json(
+        { error: 'Password is managed by Active Directory' },
+        { status: 400 }
+      );
+    }
+
     const body = await request.json();
     const { oldPassword, newPassword } = body;
 

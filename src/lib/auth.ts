@@ -5,6 +5,7 @@
 import bcrypt from 'bcrypt';
 import { query, transaction } from './db';
 import { createAuditLog } from './audit';
+import { authenticateWithLdap } from './ldap';
 
 const SALT_ROUNDS = 10;
 const SESSION_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
@@ -13,6 +14,7 @@ export interface User {
   id: number;
   username: string;
   role: 'viewer' | 'uploader' | 'bucket-creator' | 'admin';
+  auth_provider: 'local' | 'ldap';
   is_active: boolean;
   must_change_password: boolean;
   last_password_change: Date | null;
@@ -22,7 +24,7 @@ export interface User {
 
 // Internal type that includes password_hash for authentication
 interface UserWithPassword extends User {
-  password_hash: string;
+  password_hash: string | null;
 }
 
 export interface Session {
@@ -50,6 +52,7 @@ export async function authenticate(
     );
 
     if (userResult.rows.length === 0) {
+      console.log(`[auth] Login failed: user "${username}" not found in DB or is inactive`);
       // Log failed attempt
       await createAuditLog({
         username,
@@ -65,11 +68,20 @@ export async function authenticate(
 
     const user = userResult.rows[0];
 
-    // Verify password
-    const passwordValid = await bcrypt.compare(password, user.password_hash);
+    console.log(`[auth] User "${username}" found in DB — id=${user.id} role=${user.role} auth_provider=${user.auth_provider} is_active=${user.is_active}`);
 
-    if (!passwordValid) {
-      // Log failed attempt
+    // Verify credential via the appropriate provider
+    let credentialValid = false;
+    if (user.auth_provider === 'ldap') {
+      credentialValid = await authenticateWithLdap(username, password);
+      console.log(`[auth] LDAP credential check result: ${credentialValid}`);
+    } else {
+      credentialValid = user.password_hash
+        ? await bcrypt.compare(password, user.password_hash)
+        : false;
+    }
+
+    if (!credentialValid) {
       await createAuditLog({
         user_id: user.id,
         username: user.username,
@@ -209,9 +221,15 @@ export async function changePassword(
 
       const user = userResult.rows[0];
 
+      if (user.auth_provider === 'ldap') {
+        return { success: false, error: 'Password is managed by Active Directory' };
+      }
+
       // Verify old password (unless it's first login)
       if (!user.must_change_password) {
-        const passwordValid = await bcrypt.compare(oldPassword, user.password_hash);
+        const passwordValid = user.password_hash
+          ? await bcrypt.compare(oldPassword, user.password_hash)
+          : false;
         if (!passwordValid) {
           await createAuditLog({
             user_id: userId,

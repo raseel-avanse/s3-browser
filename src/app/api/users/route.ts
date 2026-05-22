@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { validateSession } from '@/lib/auth';
-import { getAllUsers, createUser, getUserCountByRole } from '@/lib/users';
+import { getAllUsers, createUser, createLdapUser, getUserCountByRole } from '@/lib/users';
+import { isLdapEnabled } from '@/lib/ldap';
 import { cookies } from 'next/headers';
 
 // GET /api/users - Get all users (admin only)
@@ -32,6 +33,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       users,
       counts,
+      ldapEnabled: isLdapEnabled(),
     });
   } catch (error) {
     console.error('Get users error:', error);
@@ -66,17 +68,17 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { username, password, role } = body;
+    const { username, password, role, auth_provider } = body;
 
-    if (!username || !password || !role) {
+    const validRoles = ['viewer', 'uploader', 'bucket-creator', 'admin'];
+
+    if (!username || !role) {
       return NextResponse.json(
-        { error: 'Username, password, and role are required' },
+        { error: 'Username and role are required' },
         { status: 400 }
       );
     }
 
-    // Validate role
-    const validRoles = ['viewer', 'uploader', 'bucket-creator', 'admin'];
     if (!validRoles.includes(role)) {
       return NextResponse.json(
         { error: `Invalid role. Must be one of: ${validRoles.join(', ')}` },
@@ -84,13 +86,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const newUser = await createUser({
-      username,
-      password,
-      role,
-      createdBy: user.id,
-      createdByUsername: user.username,
-    });
+    const isLdap = auth_provider === 'ldap';
+
+    if (isLdap && !isLdapEnabled()) {
+      return NextResponse.json(
+        { error: 'LDAP authentication is not configured on this server' },
+        { status: 400 }
+      );
+    }
+
+    if (!isLdap && !password) {
+      return NextResponse.json(
+        { error: 'Password is required for local users' },
+        { status: 400 }
+      );
+    }
+
+    const newUser = isLdap
+      ? await createLdapUser({ username, role, createdBy: user.id, createdByUsername: user.username })
+      : await createUser({ username, password, role, createdBy: user.id, createdByUsername: user.username });
 
     if (!newUser) {
       return NextResponse.json(

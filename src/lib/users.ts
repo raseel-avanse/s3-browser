@@ -15,6 +15,13 @@ export interface CreateUserInput {
   createdByUsername?: string;
 }
 
+export interface CreateLdapUserInput {
+  username: string;
+  role: 'viewer' | 'uploader' | 'bucket-creator' | 'admin';
+  createdBy?: number;
+  createdByUsername?: string;
+}
+
 export interface UpdateUserInput {
   role?: 'viewer' | 'uploader' | 'bucket-creator' | 'admin';
   is_active?: boolean;
@@ -27,7 +34,7 @@ export interface UpdateUserInput {
  */
 export async function getAllUsers(): Promise<User[]> {
   const result = await query<User>(
-    'SELECT id, username, role, is_active, must_change_password, last_password_change, created_at, updated_at FROM users ORDER BY created_at DESC'
+    'SELECT id, username, role, auth_provider, is_active, must_change_password, last_password_change, created_at, updated_at FROM users ORDER BY created_at DESC'
   );
   return result.rows;
 }
@@ -37,7 +44,7 @@ export async function getAllUsers(): Promise<User[]> {
  */
 export async function getUserById(id: number): Promise<User | null> {
   const result = await query<User>(
-    'SELECT id, username, role, is_active, must_change_password, last_password_change, created_at, updated_at FROM users WHERE id = $1',
+    'SELECT id, username, role, auth_provider, is_active, must_change_password, last_password_change, created_at, updated_at FROM users WHERE id = $1',
     [id]
   );
   return result.rows[0] || null;
@@ -48,7 +55,7 @@ export async function getUserById(id: number): Promise<User | null> {
  */
 export async function getUserByUsername(username: string): Promise<User | null> {
   const result = await query<User>(
-    'SELECT id, username, role, is_active, must_change_password, last_password_change, created_at, updated_at FROM users WHERE username = $1',
+    'SELECT id, username, role, auth_provider, is_active, must_change_password, last_password_change, created_at, updated_at FROM users WHERE username = $1',
     [username]
   );
   return result.rows[0] || null;
@@ -73,7 +80,7 @@ export async function createUser(input: CreateUserInput): Promise<User | null> {
       const result = await client.query<User>(
         `INSERT INTO users (username, password_hash, role, must_change_password)
          VALUES ($1, $2, $3, true)
-         RETURNING id, username, role, is_active, must_change_password, last_password_change, created_at, updated_at`,
+         RETURNING id, username, role, auth_provider, is_active, must_change_password, last_password_change, created_at, updated_at`,
         [input.username, passwordHash, input.role]
       );
 
@@ -137,8 +144,8 @@ export async function updateUser(
       params.push(id);
 
       const result = await client.query<User>(
-        `UPDATE users SET ${updates.join(', ')} WHERE id = $${paramIndex} 
-         RETURNING id, username, role, is_active, must_change_password, last_password_change, created_at, updated_at`,
+        `UPDATE users SET ${updates.join(', ')} WHERE id = $${paramIndex}
+         RETURNING id, username, role, auth_provider, is_active, must_change_password, last_password_change, created_at, updated_at`,
         params
       );
 
@@ -241,10 +248,10 @@ export async function toggleUserStatus(
       }
 
       const result = await client.query<User>(
-        `UPDATE users 
-         SET is_active = NOT is_active, updated_at = NOW() 
-         WHERE id = $1 
-         RETURNING id, username, role, is_active, must_change_password, last_password_change, created_at, updated_at`,
+        `UPDATE users
+         SET is_active = NOT is_active, updated_at = NOW()
+         WHERE id = $1
+         RETURNING id, username, role, auth_provider, is_active, must_change_password, last_password_change, created_at, updated_at`,
         [id]
       );
 
@@ -319,6 +326,48 @@ export async function resetUserPassword(
   } catch (error) {
     console.error('Reset user password error:', error);
     return false;
+  }
+}
+
+/**
+ * Create an LDAP-authenticated user (no local password stored)
+ */
+export async function createLdapUser(input: CreateLdapUserInput): Promise<User | null> {
+  try {
+    const existing = await getUserByUsername(input.username);
+    if (existing) {
+      throw new Error('Username already exists');
+    }
+
+    return await transaction(async (client) => {
+      const result = await client.query<User>(
+        `INSERT INTO users (username, password_hash, role, auth_provider, must_change_password)
+         VALUES ($1, NULL, $2, 'ldap', false)
+         RETURNING id, username, role, auth_provider, is_active, must_change_password, last_password_change, created_at, updated_at`,
+        [input.username, input.role]
+      );
+
+      const user = result.rows[0];
+
+      await createAuditLog({
+        user_id: input.createdBy,
+        username: input.createdByUsername,
+        action: 'user.created',
+        resource_type: 'user',
+        resource_id: user.id.toString(),
+        details: {
+          target_username: user.username,
+          target_role: user.role,
+          auth_provider: 'ldap',
+        },
+        status: 'success',
+      });
+
+      return user;
+    });
+  } catch (error) {
+    console.error('Create LDAP user error:', error);
+    return null;
   }
 }
 

@@ -8,8 +8,9 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE TABLE IF NOT EXISTS users (
   id SERIAL PRIMARY KEY,
   username VARCHAR(50) UNIQUE NOT NULL,
-  password_hash TEXT NOT NULL,
+  password_hash TEXT,
   role VARCHAR(20) NOT NULL DEFAULT 'viewer',
+  auth_provider VARCHAR(20) NOT NULL DEFAULT 'local',
   is_active BOOLEAN DEFAULT true,
   must_change_password BOOLEAN DEFAULT false,
   last_password_change TIMESTAMP,
@@ -19,6 +20,7 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE INDEX idx_users_username ON users(username);
 CREATE INDEX idx_users_role ON users(role);
+CREATE INDEX idx_users_auth_provider ON users(auth_provider);
 
 -- Buckets Table
 CREATE TABLE IF NOT EXISTS buckets (
@@ -125,5 +127,6 @@ COMMENT ON TABLE app_settings IS 'Application-wide configuration (logo, branding
 COMMENT ON TABLE sessions IS 'User session tokens';
 
 COMMENT ON COLUMN users.role IS 'Roles: viewer, uploader, bucket-creator, admin';
+COMMENT ON COLUMN users.auth_provider IS 'Auth providers: local (bcrypt), ldap (Active Directory)';
 COMMENT ON COLUMN bucket_assignments.permission IS 'Permissions: read, write, admin';
 COMMENT ON COLUMN audit_logs.action IS 'Actions: login, logout, bucket.create, bucket.delete, file.upload, etc.';

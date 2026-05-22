@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Trash, Loader2, Users, Key, ShieldCheck } from 'lucide-react';
+import { Plus, Trash, Loader2, Users, Key, ShieldCheck, Building2 } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -21,11 +21,13 @@ import { AppSidebar } from '@/components/app-sidebar';
 import { useToast } from '@/hooks/use-toast';
 
 type UserRole = 'viewer' | 'uploader' | 'bucket-creator' | 'admin';
+type AuthProvider = 'local' | 'ldap';
 
 interface ApiUser {
   id: number;
   username: string;
   role: UserRole;
+  auth_provider: AuthProvider;
   is_active: boolean;
   must_change_password: boolean;
   created_at: string;
@@ -45,11 +47,20 @@ const roleLabels: Record<UserRole, string> = {
   admin: 'Admin',
 };
 
-const addUserSchema = z.object({
-  username: z.string().min(3, { message: "Username must be at least 3 characters." }),
-  password: z.string().min(8, { message: "Password must be at least 8 characters." }),
-  role: z.enum(['viewer', 'uploader', 'bucket-creator', 'admin'] as const).default('viewer'),
-});
+const addUserSchema = z.discriminatedUnion('auth_provider', [
+  z.object({
+    auth_provider: z.literal('local'),
+    username: z.string().min(3, { message: "Username must be at least 3 characters." }),
+    password: z.string().min(8, { message: "Password must be at least 8 characters." }),
+    role: z.enum(['viewer', 'uploader', 'bucket-creator', 'admin'] as const).default('viewer'),
+  }),
+  z.object({
+    auth_provider: z.literal('ldap'),
+    username: z.string().min(3, { message: "Username must be at least 3 characters." }),
+    password: z.string().optional(),
+    role: z.enum(['viewer', 'uploader', 'bucket-creator', 'admin'] as const).default('viewer'),
+  }),
+]);
 
 const resetPasswordSchema = z.object({
   password: z.string().min(8, { message: "Password must be at least 8 characters." }),
@@ -58,15 +69,48 @@ const resetPasswordSchema = z.object({
 type AddUserValues = z.infer<typeof addUserSchema>;
 type ResetPasswordValues = z.infer<typeof resetPasswordSchema>;
 
-const AddUserForm = ({ onSave, onCancel }: { onSave: (values: AddUserValues) => void; onCancel: () => void }) => {
+const AddUserForm = ({
+  onSave,
+  onCancel,
+  ldapEnabled,
+}: {
+  onSave: (values: AddUserValues) => void;
+  onCancel: () => void;
+  ldapEnabled: boolean;
+}) => {
   const form = useForm<AddUserValues>({
     resolver: zodResolver(addUserSchema),
-    defaultValues: { username: '', password: '', role: 'viewer' },
+    defaultValues: { auth_provider: 'local', username: '', password: '', role: 'viewer' },
   });
+
+  const authProvider = form.watch('auth_provider');
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSave)} className="space-y-4">
+        {ldapEnabled && (
+          <FormField
+            control={form.control}
+            name="auth_provider"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Authentication</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="local">Local</SelectItem>
+                    <SelectItem value="ldap">Active Directory (LDAP)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
         <FormField
           control={form.control}
           name="username"
@@ -74,26 +118,31 @@ const AddUserForm = ({ onSave, onCancel }: { onSave: (values: AddUserValues) => 
             <FormItem>
               <FormLabel>Username</FormLabel>
               <FormControl>
-                <Input placeholder="newuser" {...field} />
+                <Input placeholder={authProvider === 'ldap' ? 'AD sAMAccountName' : 'newuser'} {...field} />
               </FormControl>
+              {authProvider === 'ldap' && (
+                <p className="text-xs text-muted-foreground">Must match the user's Active Directory login name</p>
+              )}
               <FormMessage />
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="password"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Password</FormLabel>
-              <FormControl>
-                <Input type="password" placeholder="••••••••" {...field} />
-              </FormControl>
-              <FormMessage />
-              <p className="text-xs text-muted-foreground">Min 8 chars, uppercase, lowercase, and number required</p>
-            </FormItem>
-          )}
-        />
+        {authProvider !== 'ldap' && (
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Password</FormLabel>
+                <FormControl>
+                  <Input type="password" placeholder="••••••••" {...field} />
+                </FormControl>
+                <FormMessage />
+                <p className="text-xs text-muted-foreground">Min 8 chars, uppercase, lowercase, and number required</p>
+              </FormItem>
+            )}
+          />
+        )}
         <FormField
           control={form.control}
           name="role"
@@ -161,6 +210,7 @@ const ResetPasswordForm = ({ username, onSave, onCancel }: { username: string; o
 export default function UserManagementPage() {
   const { isAuthenticated, isAdmin, isLoading: isAuthLoading } = useAuth();
   const [users, setUsers] = useState<ApiUser[]>([]);
+  const [ldapEnabled, setLdapEnabled] = useState(false);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
   const [roleDialogUser, setRoleDialogUser] = useState<ApiUser | null>(null);
   const [pendingRole, setPendingRole] = useState<UserRole>('viewer');
@@ -176,6 +226,7 @@ export default function UserManagementPage() {
       if (response.ok) {
         const data = await response.json();
         setUsers(data.users);
+        setLdapEnabled(data.ldapEnabled ?? false);
       } else {
         toast({ variant: 'destructive', title: 'Error', description: 'Failed to load users.' });
       }
@@ -209,7 +260,12 @@ export default function UserManagementPage() {
       const response = await fetch('/api/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(values),
+        body: JSON.stringify({
+          username: values.username,
+          role: values.role,
+          auth_provider: values.auth_provider,
+          ...(values.auth_provider !== 'ldap' && { password: values.password }),
+        }),
         credentials: 'include',
       });
 
@@ -315,7 +371,7 @@ export default function UserManagementPage() {
                   <DialogTitle>Add New User</DialogTitle>
                   <DialogDescription>Create a new user account and assign a role.</DialogDescription>
                 </DialogHeader>
-                <AddUserForm onSave={handleAddUser} onCancel={() => setIsAddFormOpen(false)} />
+                <AddUserForm onSave={handleAddUser} onCancel={() => setIsAddFormOpen(false)} ldapEnabled={ldapEnabled} />
               </DialogContent>
             </Dialog>
           </CardHeader>
@@ -330,6 +386,7 @@ export default function UserManagementPage() {
                   <TableRow>
                     <TableHead>Username</TableHead>
                     <TableHead>Role</TableHead>
+                    <TableHead>Auth</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -344,20 +401,31 @@ export default function UserManagementPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>
+                        {u.auth_provider === 'ldap' ? (
+                          <Badge variant="outline" className="text-blue-600 border-blue-400 gap-1">
+                            <Building2 className="h-3 w-3" /> AD
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-gray-500 border-gray-300">Local</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
                         {u.must_change_password && (
                           <Badge variant="outline" className="text-amber-600 border-amber-400">Must change password</Badge>
                         )}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex gap-2 justify-end">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setResetPasswordUser(u)}
-                            title="Reset Password"
-                          >
-                            <Key className="h-4 w-4" />
-                          </Button>
+                          {u.auth_provider !== 'ldap' && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setResetPasswordUser(u)}
+                              title="Reset Password"
+                            >
+                              <Key className="h-4 w-4" />
+                            </Button>
+                          )}
                           {u.username !== 'admin' && (
                             <>
                               <Button
