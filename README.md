@@ -163,3 +163,5 @@ Bucket configurations (names, credentials) are stored in **browser localStorage*
 ## License
 
 MIT
+
+
