@@ -19,6 +19,21 @@ export interface Bucket {
   is_active: boolean;
   created_at: Date;
   updated_at: Date;
+  // Populated in API responses that carry ownership/assignment context
+  owner_username?: string;
+  is_owned?: boolean;
+  permission?: string | null;
+}
+
+export interface BucketAssignmentRecord {
+  id: number;
+  bucket_id: number;
+  user_id: number;
+  username: string;
+  role?: string;
+  permission: string;
+  assigned_by?: number;
+  created_at: Date;
 }
 
 export interface CreateBucketInput {
@@ -52,14 +67,16 @@ export interface UpdateBucketInput {
 export async function getAllBuckets(): Promise<Bucket[]> {
   const result = await query<any>(
     `SELECT
-      id, user_id, alias, bucket_name, region, root_folder,
-      access_key_id as access_key_id_encrypted,
-      secret_access_key as secret_access_key_encrypted,
-      session_token as session_token_encrypted,
-      is_active, created_at, updated_at
-     FROM buckets
-     WHERE is_active = true
-     ORDER BY created_at DESC`
+      b.id, b.user_id, b.alias, b.bucket_name, b.region, b.root_folder,
+      b.access_key_id  AS access_key_id_encrypted,
+      b.secret_access_key AS secret_access_key_encrypted,
+      b.session_token  AS session_token_encrypted,
+      b.is_active, b.created_at, b.updated_at,
+      u.username AS owner_username
+     FROM buckets b
+     JOIN users u ON b.user_id = u.id
+     WHERE b.is_active = true
+     ORDER BY b.created_at DESC`
   );
 
   return result.rows.map((row) => {
@@ -82,6 +99,7 @@ export async function getAllBuckets(): Promise<Bucket[]> {
       is_active: row.is_active,
       created_at: row.created_at,
       updated_at: row.updated_at,
+      owner_username: row.owner_username,
     };
   });
 }
@@ -503,4 +521,144 @@ export async function getBucketCount(userId: number): Promise<number> {
     [userId]
   );
   return parseInt(result.rows[0].count, 10);
+}
+
+/**
+ * Get all active buckets that have been explicitly assigned to a user
+ * (i.e. buckets the user does NOT own but has been granted access to).
+ * Returns decrypted credentials so the client can connect.
+ */
+export async function getBucketsAssignedToUser(userId: number): Promise<Bucket[]> {
+  const result = await query<any>(
+    `SELECT
+      b.id, b.user_id, b.alias, b.bucket_name, b.region, b.root_folder,
+      b.access_key_id  AS access_key_id_encrypted,
+      b.secret_access_key AS secret_access_key_encrypted,
+      b.session_token  AS session_token_encrypted,
+      b.is_active, b.created_at, b.updated_at,
+      u.username AS owner_username,
+      ba.permission
+     FROM buckets b
+     JOIN bucket_assignments ba ON b.id = ba.bucket_id
+     JOIN users u ON b.user_id = u.id
+     WHERE ba.user_id = $1 AND b.is_active = true
+     ORDER BY b.created_at DESC`,
+    [userId]
+  );
+
+  return result.rows.map((row) => {
+    const decrypted = decryptCredentials({
+      access_key_id_encrypted: row.access_key_id_encrypted,
+      secret_access_key_encrypted: row.secret_access_key_encrypted,
+      session_token_encrypted: row.session_token_encrypted,
+    });
+    return {
+      id: row.id,
+      user_id: row.user_id,
+      alias: row.alias,
+      bucket_name: row.bucket_name,
+      region: row.region,
+      root_folder: row.root_folder,
+      access_key_id: decrypted.access_key_id,
+      secret_access_key: decrypted.secret_access_key,
+      session_token: decrypted.session_token,
+      is_active: row.is_active,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+      owner_username: row.owner_username,
+      is_owned: false,
+      permission: row.permission,
+    };
+  });
+}
+
+/**
+ * Upsert a user's access to a bucket into bucket_assignments.
+ */
+export async function assignBucketToUser(
+  bucketId: number,
+  userId: number,
+  assignedByUserId: number,
+  permission: string
+): Promise<boolean> {
+  try {
+    await query(
+      `INSERT INTO bucket_assignments (bucket_id, user_id, permission, assigned_by)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (bucket_id, user_id)
+       DO UPDATE SET permission = EXCLUDED.permission, assigned_by = EXCLUDED.assigned_by`,
+      [bucketId, userId, permission, assignedByUserId]
+    );
+    return true;
+  } catch (error) {
+    console.error('assignBucketToUser error:', error);
+    return false;
+  }
+}
+
+/**
+ * Remove a user's assignment from a bucket.
+ */
+export async function removeBucketAssignment(
+  bucketId: number,
+  userId: number
+): Promise<boolean> {
+  try {
+    await query(
+      'DELETE FROM bucket_assignments WHERE bucket_id = $1 AND user_id = $2',
+      [bucketId, userId]
+    );
+    return true;
+  } catch (error) {
+    console.error('removeBucketAssignment error:', error);
+    return false;
+  }
+}
+
+/**
+ * Get all user assignments for a single bucket (with username + role).
+ */
+export async function getAssignmentsByBucketId(bucketId: number): Promise<BucketAssignmentRecord[]> {
+  const result = await query<any>(
+    `SELECT ba.id, ba.bucket_id, ba.user_id, ba.permission, ba.assigned_by, ba.created_at,
+            u.username, u.role
+     FROM bucket_assignments ba
+     JOIN users u ON ba.user_id = u.id
+     WHERE ba.bucket_id = $1
+     ORDER BY ba.created_at ASC`,
+    [bucketId]
+  );
+  return result.rows.map((row) => ({
+    id: row.id,
+    bucket_id: row.bucket_id,
+    user_id: row.user_id,
+    username: row.username,
+    role: row.role,
+    permission: row.permission,
+    assigned_by: row.assigned_by,
+    created_at: row.created_at,
+  }));
+}
+
+/**
+ * Get every bucket assignment across all buckets (admin use).
+ */
+export async function getAllBucketAssignments(): Promise<BucketAssignmentRecord[]> {
+  const result = await query<any>(
+    `SELECT ba.id, ba.bucket_id, ba.user_id, ba.permission, ba.assigned_by, ba.created_at,
+            u.username, u.role
+     FROM bucket_assignments ba
+     JOIN users u ON ba.user_id = u.id
+     ORDER BY ba.bucket_id, ba.created_at ASC`
+  );
+  return result.rows.map((row) => ({
+    id: row.id,
+    bucket_id: row.bucket_id,
+    user_id: row.user_id,
+    username: row.username,
+    role: row.role,
+    permission: row.permission,
+    assigned_by: row.assigned_by,
+    created_at: row.created_at,
+  }));
 }
