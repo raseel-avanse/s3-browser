@@ -26,7 +26,13 @@ export async function GET(request: NextRequest) {
       buckets = all.map(b => ({ ...b, is_owned: b.user_id === user.id, permission: null }));
     } else {
       const owned = await getBucketsByUserId(user.id);
-      const assigned = await getBucketsAssignedToUser(user.id);
+      let assigned: Awaited<ReturnType<typeof getBucketsAssignedToUser>> = [];
+      try {
+        assigned = await getBucketsAssignedToUser(user.id);
+      } catch (assignErr) {
+        // Table may not exist yet — owned buckets still render; run `npm run db:migrate` to fix
+        console.error('getBucketsAssignedToUser failed:', assignErr);
+      }
       buckets = [
         ...owned.map(b => ({ ...b, is_owned: true, owner_username: user.username, permission: null })),
         ...assigned, // already carries is_owned:false, owner_username, permission

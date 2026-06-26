@@ -84,6 +84,14 @@ export function BucketProvider({ children }: { children: React.ReactNode }) {
   // Reload whenever the logged-in user changes.
   useEffect(() => { refreshBuckets(); }, [refreshBuckets]);
 
+  // Reload when the browser tab regains focus so newly-assigned buckets appear
+  // without the user needing to manually refresh the page.
+  useEffect(() => {
+    const onVisible = () => { if (document.visibilityState === 'visible') refreshBuckets(); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [refreshBuckets]);
+
   const userBuckets: BucketWithPermission[] = React.useMemo(
     () => rawRows.map(r => mapRow(r, statusMap)),
     [rawRows, statusMap]
