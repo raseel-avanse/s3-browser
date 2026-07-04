@@ -52,3 +52,6 @@ backup_*.sql
 # firebase
 firebase-debug.log
 firestore-debug.loglogs/
+
+# public
+/public
