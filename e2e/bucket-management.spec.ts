@@ -90,13 +90,9 @@ test.describe.serial('Bucket create / assign / visibility', () => {
     // "R/W" permission badge alongside the alias.
     const bucket = page.getByText(TEST_BUCKET_ALIAS).first();
 
-    // The bucket list is driven by AuthContext's own session check, which can
-    // race the just-set login cookie. A reload deterministically re-runs it.
-    if (!(await bucket.isVisible().catch(() => false))) {
-      await page.reload();
-    }
-
-    // The assigned bucket is visible to the viewer...
+    // No reload workaround: the page now gates on AuthContext + bucket loading
+    // state (single source of truth), so the assigned bucket must appear on
+    // first load.
     await expect(bucket).toBeVisible({ timeout: 15000 });
     // ...and marked as shared (not owned by the viewer).
     await expect(page.getByText(/Shared by/i).first()).toBeVisible();
