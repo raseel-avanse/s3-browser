@@ -56,3 +56,6 @@ firestore-debug.loglogs/
 # Playwright
 test-results/
 playwright-report/
+
+# public
+/public
