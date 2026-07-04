@@ -12,6 +12,7 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "db:migrate": "node scripts/migrate.js",
+    "db:migrate:assignments": "node scripts/migrate-bucket-assignments.js",
     "db:seed": "node scripts/seed.js",
     "db:reset": "node scripts/reset.js",
     "generate-keys": "node scripts/generate-keys.js"
