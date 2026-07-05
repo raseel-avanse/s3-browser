@@ -22,61 +22,28 @@ import { AppSidebar } from '@/components/app-sidebar';
 type ViewType = 'card' | 'list';
 
 export default function HomePage() {
-  const { user, isAuthenticated, isLoading } = useAuth();
+  // Auth state comes from AuthContext — the single source of truth. Gating the
+  // page on the SAME session resolution that drives BucketContext prevents the
+  // "logged in but empty bucket list" race that a separate session check caused.
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const { canCreateBucket } = usePermission();
-  const { buckets, addBucket, updateBucket, deleteBucket, setBucketStatus, canEditBucket, canDeleteBucket } = useBucket();
+  const { buckets, addBucket, updateBucket, deleteBucket, setBucketStatus, canEditBucket, canDeleteBucket, isLoading: bucketsLoading } = useBucket();
   const router = useRouter();
   const { toast } = useToast();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingBucket, setEditingBucket] = useState<BucketWithPermission | undefined>(undefined);
   const [testingConnectionId, setTestingConnectionId] = useState<string | null>(null);
   const [view, setView] = useState<ViewType>('card');
-  const [sessionChecked, setSessionChecked] = useState(false);
-  const [hasValidSession, setHasValidSession] = useState(false);
 
+  // Redirect unauthenticated users once the session check has resolved.
   useEffect(() => {
-    // Check session validity via API (only once on mount)
-    // Note: Cannot check document.cookie because session_token is HttpOnly
-    let mounted = true;
+    if (!authLoading && !isAuthenticated) {
+      router.push('/login');
+    }
+  }, [authLoading, isAuthenticated, router]);
 
-    const checkSession = async () => {
-      console.log("[HOME] Checking session with API...");
-
-      try {
-        // Validate session with API - cookie is sent automatically
-        const response = await fetch('/api/auth/session', {
-          credentials: 'include', // Required to send cookies
-        });
-        const isValid = response.ok;
-        console.log("[HOME] Session validation result:", isValid);
-
-        if (mounted) {
-          setHasValidSession(isValid);
-          setSessionChecked(true);
-
-          if (!isValid) {
-            console.log("[HOME] Invalid session, redirecting to login");
-            router.push('/login');
-          }
-        }
-      } catch (error) {
-        console.error("[HOME] Session check failed:", error);
-        if (mounted) {
-          setSessionChecked(true);
-          setHasValidSession(false);
-          router.push('/login');
-        }
-      }
-    };
-
-    checkSession();
-
-    return () => {
-      mounted = false;
-    };
-  }, [router]);
-
-  if (!sessionChecked) {
+  // While the session is being restored, show a spinner.
+  if (authLoading) {
     return (
       <div className="w-screen h-screen flex items-center justify-center">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -84,11 +51,20 @@ export default function HomePage() {
     );
   }
 
-  if (!hasValidSession) {
-    console.log("[HOME] No valid session, rendering login page");
+  // Session resolved and there is no valid session — render login.
+  if (!isAuthenticated) {
     return <LoginPage />;
   }
-  
+
+  // Authenticated, but buckets haven't finished loading from the database yet.
+  if (bucketsLoading) {
+    return (
+      <div className="w-screen h-screen flex items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   const handleAddClick = () => {
     setEditingBucket(undefined);
     setIsFormOpen(true);

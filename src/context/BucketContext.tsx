@@ -37,6 +37,8 @@ interface BucketContextType {
   canDeleteBucket: (bucketId: string) => boolean;
   canUploadToBucket: (bucketId: string) => boolean;
   refreshBuckets: () => Promise<void>;
+  /** True while the authenticated user's buckets have not yet been fetched. */
+  isLoading: boolean;
 }
 
 const BucketContext = createContext<BucketContextType | undefined>(undefined);
@@ -65,9 +67,14 @@ export function BucketProvider({ children }: { children: React.ReactNode }) {
   const [rawRows, setRawRows] = useState<any[]>([]);
   const [statusMap, setStatusMap] = useState<Record<string, Bucket['status']>>({});
   const [selectedBucket, setSelectedBucket] = useState<BucketWithPermission | null>(null);
+  // Username the current rawRows were fetched for. Buckets are considered
+  // "loading" whenever there is an authenticated user whose buckets have not
+  // yet been fetched — this lets the UI show a spinner instead of a
+  // misleading empty list while the fetch is in flight.
+  const [fetchedFor, setFetchedFor] = useState<string | null>(null);
 
   const refreshBuckets = useCallback(async () => {
-    if (!user) { setRawRows([]); return; }
+    if (!user) { setRawRows([]); setFetchedFor(null); return; }
     try {
       const res = await fetch('/api/buckets', { credentials: 'include' });
       if (res.ok) {
@@ -78,8 +85,13 @@ export function BucketProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (e) {
       console.error('BucketContext: failed to load buckets', e);
+    } finally {
+      setFetchedFor(user.username);
     }
   }, [user?.username]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Loading = there is a user but rawRows haven't been fetched for them yet.
+  const isLoading = !!user && fetchedFor !== user.username;
 
   // Reload whenever the logged-in user changes.
   useEffect(() => { refreshBuckets(); }, [refreshBuckets]);
@@ -239,6 +251,7 @@ export function BucketProvider({ children }: { children: React.ReactNode }) {
       canDeleteBucket,
       canUploadToBucket,
       refreshBuckets,
+      isLoading,
     }}>
       {children}
     </BucketContext.Provider>

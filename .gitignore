@@ -53,5 +53,9 @@ backup_*.sql
 firebase-debug.log
 firestore-debug.loglogs/
 
+# Playwright
+test-results/
+playwright-report/
+
 # public
 /public

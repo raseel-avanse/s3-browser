@@ -69,6 +69,11 @@ cp .env.example .env
 # 5. Start application
 npm run dev
 ```
+Or if you want to Build and run
+```bash
+npm run build
+pm2 start npm --name "s3-browser" -- run start
+```
 
 Open [http://localhost:5000](http://localhost:5000)
 
