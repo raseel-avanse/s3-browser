@@ -39,6 +39,8 @@ interface BucketContextType {
   refreshBuckets: () => Promise<void>;
   /** True while the authenticated user's buckets have not yet been fetched. */
   isLoading: boolean;
+  /** Set when the last bucket fetch failed for a reason other than auth (401). */
+  loadError: boolean;
 }
 
 const BucketContext = createContext<BucketContextType | undefined>(undefined);
@@ -72,6 +74,7 @@ export function BucketProvider({ children }: { children: React.ReactNode }) {
   // yet been fetched — this lets the UI show a spinner instead of a
   // misleading empty list while the fetch is in flight.
   const [fetchedFor, setFetchedFor] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState(false);
 
   const refreshBuckets = useCallback(async () => {
     if (!user) { setRawRows([]); setFetchedFor(null); return; }
@@ -80,11 +83,18 @@ export function BucketProvider({ children }: { children: React.ReactNode }) {
       if (res.ok) {
         const data = await res.json();
         setRawRows(data.buckets ?? []);
+        setLoadError(false);
       } else if (res.status === 401) {
         setRawRows([]);
+        setLoadError(false);
+      } else {
+        // A non-auth failure (5xx, etc.) must be distinguishable from "no
+        // buckets" so the UI can show an error+retry instead of an empty state.
+        setLoadError(true);
       }
     } catch (e) {
       console.error('BucketContext: failed to load buckets', e);
+      setLoadError(true);
     } finally {
       setFetchedFor(user.username);
     }
@@ -252,6 +262,7 @@ export function BucketProvider({ children }: { children: React.ReactNode }) {
       canUploadToBucket,
       refreshBuckets,
       isLoading,
+      loadError,
     }}>
       {children}
     </BucketContext.Provider>
