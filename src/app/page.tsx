@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Trash, Edit, HardDrive, Loader2, HelpCircle, CheckCircle, XCircle, RefreshCw, LayoutGrid, List, Shield, ShieldOff } from 'lucide-react';
+import { Plus, Trash, Edit, HardDrive, Loader2, HelpCircle, CheckCircle, XCircle, RefreshCw, LayoutGrid, List, Shield, ShieldOff, AlertCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { CredentialsForm, type S3Config } from '@/components/credentials-form';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -27,7 +27,7 @@ export default function HomePage() {
   // "logged in but empty bucket list" race that a separate session check caused.
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const { canCreateBucket } = usePermission();
-  const { buckets, addBucket, updateBucket, deleteBucket, setBucketStatus, canEditBucket, canDeleteBucket, isLoading: bucketsLoading } = useBucket();
+  const { buckets, addBucket, updateBucket, deleteBucket, setBucketStatus, canEditBucket, canDeleteBucket, isLoading: bucketsLoading, loadError, refreshBuckets } = useBucket();
   const router = useRouter();
   const { toast } = useToast();
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -54,15 +54,6 @@ export default function HomePage() {
   // Session resolved and there is no valid session — render login.
   if (!isAuthenticated) {
     return <LoginPage />;
-  }
-
-  // Authenticated, but buckets haven't finished loading from the database yet.
-  if (bucketsLoading) {
-    return (
-      <div className="w-screen h-screen flex items-center justify-center">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    );
   }
 
   const handleAddClick = () => {
@@ -94,14 +85,8 @@ export default function HomePage() {
   };
 
   const handleSelectBucket = (bucket: BucketWithPermission) => {
-    if (bucket.status !== 'connected') {
-      toast({
-        variant: "destructive",
-        title: "Connection Not Verified",
-        description: "Please test the connection successfully before browsing the bucket.",
-      });
-      return;
-    }
+    // Browse directly — the bucket view attempts the listing and surfaces any
+    // connection error inline (with a retry), so no manual "test first" gate.
     router.push(`/buckets/${bucket.id}`);
   };
 
@@ -121,7 +106,7 @@ export default function HomePage() {
   const getStatusIcon = (status: BucketWithPermission['status']) => {
     switch (status) {
       case 'connected':
-        return <Badge variant="secondary" className="border-green-500 text-green-700"><CheckCircle className="mr-1 h-3 w-3" /> Connected</Badge>;
+        return <Badge variant="outline" className="border-success/40 text-success"><CheckCircle className="mr-1 h-3 w-3" /> Connected</Badge>;
       case 'failed':
         return <Badge variant="destructive"><XCircle className="mr-1 h-3 w-3" /> Failed</Badge>;
       case 'untested':
@@ -148,6 +133,7 @@ export default function HomePage() {
         size="sm" 
         onClick={(e) => { e.stopPropagation(); handleEditClick(bucket); }}
         disabled={!canEditBucket(bucket.id)}
+        aria-label={`Edit ${bucket.name}`}
       >
         <Edit className="h-4 w-4" />
       </Button>
@@ -156,9 +142,10 @@ export default function HomePage() {
           <Button 
             variant="ghost" 
             size="icon" 
-            className="text-destructive hover:text-destructive h-9 w-9" 
+            className="text-destructive hover:text-destructive h-9 w-9"
             onClick={(e) => e.stopPropagation()}
             disabled={!canDeleteBucket(bucket.id)}
+            aria-label={`Delete ${bucket.name}`}
           >
             <Trash className="h-4 w-4" />
           </Button>
@@ -167,7 +154,9 @@ export default function HomePage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the "{bucket.name}" bucket configuration. This action cannot be undone.
+              This permanently deletes the &quot;{bucket.name}&quot; bucket configuration and
+              removes it for every user it&apos;s shared with. Your S3 data is not affected.
+              This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -180,15 +169,15 @@ export default function HomePage() {
   );
 
   return (
-    <div className="min-h-screen skeu-bg">
+    <div className="min-h-screen skeu-bg app-content">
       <AppSidebar />
       <main className="p-4 md:p-8">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-3xl font-semibold">Bucket List</h2>
           <div className='flex items-center gap-2'>
             <div className='flex items-center gap-1 bg-muted p-1 rounded-lg'>
-                <Button variant={view === 'card' ? 'secondary' : 'ghost'} size="sm" onClick={() => setView('card')}><LayoutGrid/></Button>
-                <Button variant={view === 'list' ? 'secondary' : 'ghost'} size="sm" onClick={() => setView('list')}><List/></Button>
+                <Button variant={view === 'card' ? 'secondary' : 'ghost'} size="sm" onClick={() => setView('card')} aria-label="Card view" aria-pressed={view === 'card'}><LayoutGrid/></Button>
+                <Button variant={view === 'list' ? 'secondary' : 'ghost'} size="sm" onClick={() => setView('list')} aria-label="List view" aria-pressed={view === 'list'}><List/></Button>
             </div>
             <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
               {canCreateBucket() && (
@@ -212,7 +201,27 @@ export default function HomePage() {
           </div>
         </div>
 
-        {buckets.length > 0 ? (
+        {bucketsLoading ? (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3" aria-busy="true" aria-label="Loading buckets">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="rounded-lg border bg-card p-6 space-y-4">
+                <div className="h-5 w-2/3 bg-muted rounded animate-pulse" />
+                <div className="h-4 w-1/2 bg-muted rounded animate-pulse" />
+                <div className="h-4 w-1/3 bg-muted rounded animate-pulse" />
+                <div className="h-9 w-full bg-muted rounded animate-pulse mt-4" />
+              </div>
+            ))}
+          </div>
+        ) : loadError ? (
+          <div className="text-center py-16 border-2 border-dashed rounded-lg flex flex-col items-center gap-4">
+            <AlertCircle className="h-10 w-10 text-destructive" />
+            <div>
+              <h3 className="text-xl font-medium">Couldn&apos;t load your buckets</h3>
+              <p className="text-muted-foreground">Something went wrong talking to the server.</p>
+            </div>
+            <Button variant="outline" onClick={() => refreshBuckets()}><RefreshCw className="mr-2 h-4 w-4" /> Retry</Button>
+          </div>
+        ) : buckets.length > 0 ? (
           view === 'card' ? (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {buckets.map((bucket) => (
@@ -246,7 +255,7 @@ export default function HomePage() {
                     )}
                   </CardContent>
                   <CardFooter className="flex justify-between">
-                    <Button variant="outline" onClick={(e) => { e.stopPropagation(); handleSelectBucket(bucket); }} disabled={bucket.status !== 'connected'}>Browse</Button>
+                    <Button variant="outline" onClick={(e) => { e.stopPropagation(); handleSelectBucket(bucket); }}>Browse</Button>
                     <div className="flex gap-2">
                        <BucketActions bucket={bucket} />
                     </div>
@@ -298,9 +307,18 @@ export default function HomePage() {
           )
         ) : (
           <div className="text-center py-16 border-2 border-dashed rounded-lg">
-            <h3 className="text-xl font-medium">No buckets yet</h3>
-            <p className="text-muted-foreground mb-4">Add your first S3 bucket to get started.</p>
-            {canCreateBucket() && <Button onClick={handleAddClick}><Plus className="mr-2 h-4 w-4" /> Add S3 Bucket</Button>}
+            {canCreateBucket() ? (
+              <>
+                <h3 className="text-xl font-medium">No buckets yet</h3>
+                <p className="text-muted-foreground mb-4">Add your first S3 bucket to get started.</p>
+                <Button onClick={handleAddClick}><Plus className="mr-2 h-4 w-4" /> Add S3 Bucket</Button>
+              </>
+            ) : (
+              <>
+                <h3 className="text-xl font-medium">No buckets shared with you yet</h3>
+                <p className="text-muted-foreground">Ask an administrator to assign a bucket to your account.</p>
+              </>
+            )}
           </div>
         )}
       </main>
