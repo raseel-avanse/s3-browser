@@ -25,7 +25,7 @@ export default function HomePage() {
   // Auth state comes from AuthContext — the single source of truth. Gating the
   // page on the SAME session resolution that drives BucketContext prevents the
   // "logged in but empty bucket list" race that a separate session check caused.
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { isAuthenticated, isAdmin, isLoading: authLoading } = useAuth();
   const { canCreateBucket } = usePermission();
   const { buckets, addBucket, updateBucket, deleteBucket, setBucketStatus, canEditBucket, canDeleteBucket, isLoading: bucketsLoading, loadError, refreshBuckets } = useBucket();
   const router = useRouter();
@@ -190,11 +190,12 @@ export default function HomePage() {
                   <DialogTitle>{editingBucket ? 'Edit Bucket' : 'Add New S3 Bucket'}</DialogTitle>
                   <DialogDescription>{editingBucket ? 'Update the configuration for this bucket.' : 'Add a new S3-compatible bucket configuration.'}</DialogDescription>
                 </DialogHeader>
-                <CredentialsForm 
-                  onSave={handleSave} 
+                <CredentialsForm
+                  onSave={handleSave}
                   onCancel={() => setIsFormOpen(false)}
                   initialData={editingBucket}
                   isEditing={!!editingBucket}
+                  isAdmin={isAdmin}
                 />
               </DialogContent>
             </Dialog>

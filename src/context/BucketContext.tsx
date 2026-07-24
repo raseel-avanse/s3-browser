@@ -16,6 +16,7 @@ export interface Bucket {
   status: 'untested' | 'connected' | 'failed';
   owner?: string;
   folder?: string;
+  maxUploadSize?: number | null;
 }
 
 export interface BucketWithPermission extends Bucket {
@@ -57,6 +58,7 @@ function mapRow(row: any, statusMap: Record<string, Bucket['status']>): BucketWi
     secretAccessKey: row.secret_access_key,
     sessionToken: row.session_token,
     folder: row.root_folder,
+    maxUploadSize: row.max_upload_size,
     owner: row.owner_username,
     status: statusMap[id] ?? 'untested',
     isOwner: row.is_owned ?? true,
@@ -131,6 +133,7 @@ export function BucketProvider({ children }: { children: React.ReactNode }) {
       secretAccessKey: r.secret_access_key,
       sessionToken: r.session_token,
       folder: r.root_folder,
+      maxUploadSize: r.max_upload_size,
       owner: r.owner_username,
       status: statusMap[String(r.id)] ?? 'untested',
     })),
@@ -152,6 +155,7 @@ export function BucketProvider({ children }: { children: React.ReactNode }) {
           access_key_id: bucket.accessKeyId,
           secret_access_key: bucket.secretAccessKey,
           session_token: bucket.sessionToken,
+          max_upload_size: bucket.maxUploadSize,
         }),
       });
       if (res.ok) {
@@ -181,6 +185,7 @@ export function BucketProvider({ children }: { children: React.ReactNode }) {
           access_key_id: updatedBucket.accessKeyId,
           secret_access_key: updatedBucket.secretAccessKey,
           session_token: updatedBucket.sessionToken,
+          max_upload_size: updatedBucket.maxUploadSize,
         }),
       });
       if (res.ok) {
