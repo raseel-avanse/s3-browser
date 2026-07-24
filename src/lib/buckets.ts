@@ -16,6 +16,7 @@ export interface Bucket {
   access_key_id?: string;
   secret_access_key?: string;
   session_token?: string;
+  max_upload_size?: number | null;
   is_active: boolean;
   created_at: Date;
   updated_at: Date;
@@ -44,6 +45,7 @@ export interface CreateBucketInput {
   access_key_id?: string;
   secret_access_key?: string;
   session_token?: string;
+  max_upload_size?: number | null;
   user_id: number;
   username?: string;
 }
@@ -56,6 +58,7 @@ export interface UpdateBucketInput {
   access_key_id?: string;
   secret_access_key?: string;
   session_token?: string;
+  max_upload_size?: number | null;
   is_active?: boolean;
   user_id?: number;
   username?: string;
@@ -71,7 +74,7 @@ export async function getAllBuckets(): Promise<Bucket[]> {
       b.access_key_id  AS access_key_id_encrypted,
       b.secret_access_key AS secret_access_key_encrypted,
       b.session_token  AS session_token_encrypted,
-      b.is_active, b.created_at, b.updated_at,
+      b.max_upload_size, b.is_active, b.created_at, b.updated_at,
       u.username AS owner_username
      FROM buckets b
      JOIN users u ON b.user_id = u.id
@@ -96,6 +99,7 @@ export async function getAllBuckets(): Promise<Bucket[]> {
       access_key_id: decrypted.access_key_id,
       secret_access_key: decrypted.secret_access_key,
       session_token: decrypted.session_token,
+      max_upload_size: row.max_upload_size,
       is_active: row.is_active,
       created_at: row.created_at,
       updated_at: row.updated_at,
@@ -114,7 +118,7 @@ export async function getBucketsByUserId(userId: number): Promise<Bucket[]> {
       access_key_id as access_key_id_encrypted,
       secret_access_key as secret_access_key_encrypted,
       session_token as session_token_encrypted,
-      is_active, created_at, updated_at
+      max_upload_size, is_active, created_at, updated_at
      FROM buckets 
      WHERE user_id = $1 AND is_active = true
      ORDER BY created_at DESC`,
@@ -139,6 +143,7 @@ export async function getBucketsByUserId(userId: number): Promise<Bucket[]> {
       access_key_id: decrypted.access_key_id,
       secret_access_key: decrypted.secret_access_key,
       session_token: decrypted.session_token,
+      max_upload_size: row.max_upload_size,
       is_active: row.is_active,
       created_at: row.created_at,
       updated_at: row.updated_at,
@@ -158,7 +163,7 @@ export async function getBucketById(id: number, userId: number, isAdmin = false)
           access_key_id as access_key_id_encrypted,
           secret_access_key as secret_access_key_encrypted,
           session_token as session_token_encrypted,
-          is_active, created_at, updated_at
+          max_upload_size, is_active, created_at, updated_at
          FROM buckets
          WHERE id = $1`
       : `SELECT
@@ -166,7 +171,7 @@ export async function getBucketById(id: number, userId: number, isAdmin = false)
           access_key_id as access_key_id_encrypted,
           secret_access_key as secret_access_key_encrypted,
           session_token as session_token_encrypted,
-          is_active, created_at, updated_at
+          max_upload_size, is_active, created_at, updated_at
          FROM buckets
          WHERE id = $1 AND user_id = $2`,
     isAdmin ? [id] : [id, userId]
@@ -193,6 +198,7 @@ export async function getBucketById(id: number, userId: number, isAdmin = false)
     access_key_id: decrypted.access_key_id,
     secret_access_key: decrypted.secret_access_key,
     session_token: decrypted.session_token,
+    max_upload_size: row.max_upload_size,
     is_active: row.is_active,
     created_at: row.created_at,
     updated_at: row.updated_at,
@@ -213,15 +219,15 @@ export async function createBucket(input: CreateBucketInput): Promise<Bucket | n
       });
 
       const result = await client.query<any>(
-        `INSERT INTO buckets 
-         (user_id, alias, bucket_name, region, root_folder, access_key_id, secret_access_key, session_token)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-         RETURNING 
+        `INSERT INTO buckets
+         (user_id, alias, bucket_name, region, root_folder, access_key_id, secret_access_key, session_token, max_upload_size)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+         RETURNING
            id, user_id, alias, bucket_name, region, root_folder,
            access_key_id as access_key_id_encrypted,
            secret_access_key as secret_access_key_encrypted,
            session_token as session_token_encrypted,
-           is_active, created_at, updated_at`,
+           max_upload_size, is_active, created_at, updated_at`,
         [
           input.user_id,
           input.alias,
@@ -231,6 +237,7 @@ export async function createBucket(input: CreateBucketInput): Promise<Bucket | n
           encrypted.access_key_id_encrypted || null,
           encrypted.secret_access_key_encrypted || null,
           encrypted.session_token_encrypted || null,
+          input.max_upload_size ?? null,
         ]
       );
 
@@ -269,6 +276,7 @@ export async function createBucket(input: CreateBucketInput): Promise<Bucket | n
         access_key_id: decrypted.access_key_id,
         secret_access_key: decrypted.secret_access_key,
         session_token: decrypted.session_token,
+        max_upload_size: bucket.max_upload_size,
         is_active: bucket.is_active,
         created_at: bucket.created_at,
         updated_at: bucket.updated_at,
@@ -351,6 +359,11 @@ export async function updateBucket(
         params.push(input.is_active);
       }
 
+      if (input.max_upload_size !== undefined) {
+        updates.push(`max_upload_size = $${paramIndex++}`);
+        params.push(input.max_upload_size);
+      }
+
       if (updates.length === 0) {
         return existing; // No updates
       }
@@ -375,7 +388,7 @@ export async function updateBucket(
            access_key_id as access_key_id_encrypted,
            secret_access_key as secret_access_key_encrypted,
            session_token as session_token_encrypted,
-           is_active, created_at, updated_at`,
+           max_upload_size, is_active, created_at, updated_at`,
         params
       );
 
@@ -411,6 +424,7 @@ export async function updateBucket(
         access_key_id: decrypted.access_key_id,
         secret_access_key: decrypted.secret_access_key,
         session_token: decrypted.session_token,
+        max_upload_size: bucket.max_upload_size,
         is_active: bucket.is_active,
         created_at: bucket.created_at,
         updated_at: bucket.updated_at,
@@ -535,7 +549,7 @@ export async function getBucketsAssignedToUser(userId: number): Promise<Bucket[]
       b.access_key_id  AS access_key_id_encrypted,
       b.secret_access_key AS secret_access_key_encrypted,
       b.session_token  AS session_token_encrypted,
-      b.is_active, b.created_at, b.updated_at,
+      b.max_upload_size, b.is_active, b.created_at, b.updated_at,
       u.username AS owner_username,
       ba.permission
      FROM buckets b
@@ -562,6 +576,7 @@ export async function getBucketsAssignedToUser(userId: number): Promise<Bucket[]
       access_key_id: decrypted.access_key_id,
       secret_access_key: decrypted.secret_access_key,
       session_token: decrypted.session_token,
+      max_upload_size: row.max_upload_size,
       is_active: row.is_active,
       created_at: row.created_at,
       updated_at: row.updated_at,

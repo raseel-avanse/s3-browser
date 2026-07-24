@@ -34,6 +34,7 @@ const nextConfig: NextConfig = {
     'pg',
     'pg-native',
     'mock-aws-s3',
+    'clamscan',
   ],
   images: {
     remotePatterns: [

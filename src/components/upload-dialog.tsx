@@ -7,6 +7,7 @@ import { Upload, X, File, AlertCircle, CheckCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { uploadObject } from "@/actions/s3";
 import type { BucketWithPermission } from "@/context/BucketContext";
+import { effectiveMaxUploadSize } from "@/lib/upload-limits";
 
 interface UploadDialogProps {
   open: boolean;
@@ -44,10 +45,12 @@ export default function UploadDialog({
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  const maxSize = effectiveMaxUploadSize(bucketConfig.maxUploadSize);
+  const maxSizeMb = (maxSize / (1024 * 1024)).toFixed(0);
+
   const validateFile = (file: File): string | null => {
-    const maxSize = 100 * 1024 * 1024; // 100MB
     if (file.size > maxSize) {
-      return `File "${file.name}" is too large. Maximum size is 100MB.`;
+      return `File "${file.name}" is too large. Maximum size is ${maxSizeMb}MB.`;
     }
     return null;
   };
@@ -169,7 +172,7 @@ export default function UploadDialog({
         <DialogHeader>
           <DialogTitle>Upload Files</DialogTitle>
           <DialogDescription>
-            Upload files to {currentPrefix || 'root'} (Maximum 100MB per file)
+            Upload files to {currentPrefix || 'root'} (Maximum {maxSizeMb}MB per file)
           </DialogDescription>
         </DialogHeader>
 
@@ -191,7 +194,7 @@ export default function UploadDialog({
               Drag and drop files here, or click to select
             </p>
             <p className="text-sm text-muted-foreground mb-4">
-              Maximum file size: 100MB
+              Maximum file size: {maxSizeMb}MB
             </p>
             <Button
               type="button"

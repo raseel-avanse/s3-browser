@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { validateSession } from '@/lib/auth';
 import { getAllBuckets, getBucketsByUserId, getBucketsAssignedToUser, createBucket, getBucketCount } from '@/lib/buckets';
+import { clampUploadSize } from '@/lib/upload-limits';
 import { cookies } from 'next/headers';
 
 // GET /api/buckets - Get all buckets for current user
@@ -73,7 +74,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { alias, bucket_name, region, root_folder, access_key_id, secret_access_key, session_token } = body;
+    const { alias, bucket_name, region, root_folder, access_key_id, secret_access_key, session_token, max_upload_size } = body;
 
     if (!alias || !bucket_name || !region) {
       return NextResponse.json(
@@ -81,6 +82,9 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Only admins may set a per-bucket upload limit; others get the app default (null).
+    const isAdmin = user.role === 'admin';
 
     const bucket = await createBucket({
       alias,
@@ -90,6 +94,7 @@ export async function POST(request: NextRequest) {
       access_key_id,
       secret_access_key,
       session_token,
+      max_upload_size: isAdmin ? (clampUploadSize(max_upload_size) ?? null) : null,
       user_id: user.id,
       username: user.username,
     });

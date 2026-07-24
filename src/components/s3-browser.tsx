@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatBytes } from "@/lib/utils";
-import { Folder, File, HardDrive, LogOut, Home, Loader2, FileImage, FileText, Music, Video, Search, Download, Upload, ChevronsLeft, ChevronsRight, AlertCircle, RefreshCw } from "lucide-react";
+import { Folder, File, HardDrive, LogOut, Home, Loader2, FileImage, FileText, Music, Video, Search, Download, Upload, ChevronsLeft, ChevronsRight, AlertCircle, RefreshCw, AlertTriangle, ShieldCheck } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import ObjectDetails from "./object-details";
 import UploadDialog from "./upload-dialog";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
@@ -29,7 +30,7 @@ import {
 } from "./ui/pagination";
 
 type CommonPrefix = { Prefix?: string };
-type S3Item = (_Object | CommonPrefix) & { type: 'file' | 'folder' };
+type S3Item = (_Object | CommonPrefix) & { type: 'file' | 'folder'; scanStatus?: 'unscanned' | 'clean' };
 
 const getFileIcon = (key?: string) => {
   if (!key) return <File className="h-5 w-5 text-muted-foreground" />;
@@ -401,7 +402,41 @@ export default function S3Browser({ config, onDisconnect }: S3BrowserProps) {
                         setSelectedItem(item);
                       }
                     }}>
-                      {item.type === 'folder' ? (item as CommonPrefix).Prefix?.replace(prefix, '').replace('/', '') : (item as _Object).Key?.replace(prefix, '')}
+                      <span className="flex items-center gap-2">
+                        {item.type === 'folder' ? (item as CommonPrefix).Prefix?.replace(prefix, '').replace('/', '') : (item as _Object).Key?.replace(prefix, '')}
+                        {item.type === 'file' && item.scanStatus === 'unscanned' && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <AlertTriangle
+                                  className="h-4 w-4 shrink-0 text-amber-500"
+                                  onClick={(e) => e.stopPropagation()}
+                                  aria-label="Not scanned for malware"
+                                />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                Not scanned for malware — the scanner was unavailable at upload.
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                        {item.type === 'file' && item.scanStatus === 'clean' && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <ShieldCheck
+                                  className="h-4 w-4 shrink-0 text-green-600"
+                                  onClick={(e) => e.stopPropagation()}
+                                  aria-label="Scanned for malware — clean"
+                                />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                Scanned for malware at upload — no threats found.
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                      </span>
                     </TableCell>
                     <TableCell>
                       {item.type === 'file' && (item as _Object).LastModified ? new Date((item as _Object).LastModified!).toLocaleString() : '—'}
