@@ -10,7 +10,7 @@ import { getCurrentUserOptional } from "@/lib/session";
 import { createAuditLog } from "@/lib/audit";
 import { effectiveMaxUploadSize } from "@/lib/upload-limits";
 import { scanBuffer } from "@/lib/malware-scan";
-import { markObjectUnscanned, clearUnscannedFlag, getUnscannedKeys } from "@/lib/scan-status";
+import { markObjectUnscanned, clearUnscannedFlag, getUnscannedKeys, markObjectClean, clearCleanFlag, getCleanKeys } from "@/lib/scan-status";
 
 const S3ConfigSchema = z.object({
   accessKeyId: z.string().optional(),
@@ -43,13 +43,13 @@ export async function listObjects(
   options?: { limit?: number; continuationToken?: string }
 ): Promise<{
   folders: { Prefix: string }[];
-  files: { Key?: string; LastModified?: Date; Size?: number; scanStatus?: 'unscanned' }[];
+  files: { Key?: string; LastModified?: Date; Size?: number; scanStatus?: 'unscanned' | 'clean' }[];
   nextContinuationToken?: string;
   isComplete: boolean;
 }> {
   const s3Client = getS3Client(config);
   const folders: { Prefix: string }[] = [];
-  const files: { Key?: string; LastModified?: Date; Size?: number; scanStatus?: 'unscanned' }[] = [];
+  const files: { Key?: string; LastModified?: Date; Size?: number; scanStatus?: 'unscanned' | 'clean' }[] = [];
   let continuationToken: string | undefined = options?.continuationToken;
 
   do {
@@ -77,15 +77,21 @@ export async function listObjects(
     if (options?.limit !== undefined) break;
   } while (continuationToken);
 
-  // Flag any files uploaded without a successful malware scan (fail-open).
+  // Annotate files with their malware-scan status: 'unscanned' (fail-open) or
+  // 'clean' (scanned OK). Files in neither set are left undefined (unknown).
   const bucketId = Number(config.id);
   if (!Number.isNaN(bucketId) && files.length > 0) {
     try {
       const keys = files.map((f) => f.Key).filter((k): k is string => !!k);
-      const unscanned = await getUnscannedKeys(bucketId, keys);
-      if (unscanned.size > 0) {
+      const [unscanned, clean] = await Promise.all([
+        getUnscannedKeys(bucketId, keys),
+        getCleanKeys(bucketId, keys),
+      ]);
+      if (unscanned.size > 0 || clean.size > 0) {
         for (const f of files) {
-          if (f.Key && unscanned.has(f.Key)) f.scanStatus = 'unscanned';
+          if (!f.Key) continue;
+          if (unscanned.has(f.Key)) f.scanStatus = 'unscanned';
+          else if (clean.has(f.Key)) f.scanStatus = 'clean';
         }
       }
     } catch (e) {
@@ -362,12 +368,16 @@ export async function uploadObject(
 
         await s3Client.send(command);
 
-        // Track scan status so the browser can flag unscanned (fail-open) files.
+        // Track scan status so the browser can flag files. The unscanned and
+        // clean records are mutually exclusive — a re-upload flips one to the
+        // other, so we always clear the opposite flag.
         if (!Number.isNaN(bucketId)) {
             try {
                 if (scan.status === 'unscanned') {
                     await markObjectUnscanned(bucketId, key, scan.error);
+                    await clearCleanFlag(bucketId, key);
                 } else {
+                    await markObjectClean(bucketId, key);
                     await clearUnscannedFlag(bucketId, key);
                 }
             } catch (e) {

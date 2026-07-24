@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatBytes } from "@/lib/utils";
-import { Folder, File, HardDrive, LogOut, Home, Loader2, FileImage, FileText, Music, Video, Search, Download, Upload, ChevronsLeft, ChevronsRight, AlertCircle, RefreshCw, AlertTriangle } from "lucide-react";
+import { Folder, File, HardDrive, LogOut, Home, Loader2, FileImage, FileText, Music, Video, Search, Download, Upload, ChevronsLeft, ChevronsRight, AlertCircle, RefreshCw, AlertTriangle, ShieldCheck } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import ObjectDetails from "./object-details";
 import UploadDialog from "./upload-dialog";
@@ -30,7 +30,7 @@ import {
 } from "./ui/pagination";
 
 type CommonPrefix = { Prefix?: string };
-type S3Item = (_Object | CommonPrefix) & { type: 'file' | 'folder'; scanStatus?: 'unscanned' };
+type S3Item = (_Object | CommonPrefix) & { type: 'file' | 'folder'; scanStatus?: 'unscanned' | 'clean' };
 
 const getFileIcon = (key?: string) => {
   if (!key) return <File className="h-5 w-5 text-muted-foreground" />;
@@ -416,6 +416,22 @@ export default function S3Browser({ config, onDisconnect }: S3BrowserProps) {
                               </TooltipTrigger>
                               <TooltipContent>
                                 Not scanned for malware — the scanner was unavailable at upload.
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                        {item.type === 'file' && item.scanStatus === 'clean' && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <ShieldCheck
+                                  className="h-4 w-4 shrink-0 text-green-600"
+                                  onClick={(e) => e.stopPropagation()}
+                                  aria-label="Scanned for malware — clean"
+                                />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                Scanned for malware at upload — no threats found.
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>

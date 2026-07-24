@@ -4,6 +4,7 @@
  * Targeted migration: upload controls.
  *   1. Add buckets.max_upload_size (per-bucket max file size in bytes).
  *   2. Create unscanned_objects table + index (fail-open malware scan flags).
+ *   3. Create scanned_clean_objects table + index (positive clean-scan records).
  *
  * Safe to run on an existing database — uses ADD COLUMN IF NOT EXISTS,
  * CREATE TABLE IF NOT EXISTS and CREATE INDEX IF NOT EXISTS.
@@ -59,6 +60,23 @@ async function migrate() {
       ON unscanned_objects(bucket_id, object_key)
     `);
     console.log('   ✅  Index ready');
+
+    // --- 4. Create scanned_clean_objects table + index ---------------------
+    console.log('\n📦  Creating scanned_clean_objects table (if not exists)…');
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS scanned_clean_objects (
+        id          SERIAL    PRIMARY KEY,
+        bucket_id   INTEGER   NOT NULL REFERENCES buckets(id) ON DELETE CASCADE,
+        object_key  TEXT      NOT NULL,
+        created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(bucket_id, object_key)
+      )
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_scanned_clean_objects_lookup
+      ON scanned_clean_objects(bucket_id, object_key)
+    `);
+    console.log('   ✅  scanned_clean_objects table ready');
 
     console.log('\n🎉  Migration completed successfully!\n');
   } catch (err) {

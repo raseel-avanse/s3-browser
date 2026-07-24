@@ -1,6 +1,11 @@
 /**
- * Tracks objects that were uploaded WITHOUT a successful malware scan
- * (fail-open). A row's presence means "unscanned"; absence means clean/normal.
+ * Tracks malware-scan outcomes for uploaded objects:
+ *   - `unscanned_objects`: uploaded WITHOUT a successful scan (fail-open).
+ *   - `scanned_clean_objects`: scanned and confirmed clean.
+ *
+ * The two are mutually exclusive per object (a re-upload flips one to the
+ * other). Absence from BOTH means "unknown" — e.g. uploaded before scanning
+ * existed or while it was disabled — and the UI shows no scan icon.
  */
 
 import { query } from './db';
@@ -36,6 +41,42 @@ export async function getUnscannedKeys(
   if (keys.length === 0) return new Set();
   const result = await query<{ object_key: string }>(
     `SELECT object_key FROM unscanned_objects
+     WHERE bucket_id = $1 AND object_key = ANY($2::text[])`,
+    [bucketId, keys]
+  );
+  return new Set(result.rows.map((r) => r.object_key));
+}
+
+/** Record an object as scanned and clean (upsert). */
+export async function markObjectClean(
+  bucketId: number,
+  objectKey: string
+): Promise<void> {
+  await query(
+    `INSERT INTO scanned_clean_objects (bucket_id, object_key)
+     VALUES ($1, $2)
+     ON CONFLICT (bucket_id, object_key)
+     DO UPDATE SET created_at = CURRENT_TIMESTAMP`,
+    [bucketId, objectKey]
+  );
+}
+
+/** Clear any clean flag for an object (e.g. after an unscanned re-upload). */
+export async function clearCleanFlag(bucketId: number, objectKey: string): Promise<void> {
+  await query(
+    'DELETE FROM scanned_clean_objects WHERE bucket_id = $1 AND object_key = $2',
+    [bucketId, objectKey]
+  );
+}
+
+/** Return the subset of the given keys that are recorded scanned-clean for this bucket. */
+export async function getCleanKeys(
+  bucketId: number,
+  keys: string[]
+): Promise<Set<string>> {
+  if (keys.length === 0) return new Set();
+  const result = await query<{ object_key: string }>(
+    `SELECT object_key FROM scanned_clean_objects
      WHERE bucket_id = $1 AND object_key = ANY($2::text[])`,
     [bucketId, keys]
   );

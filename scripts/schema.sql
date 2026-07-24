@@ -53,6 +53,19 @@ CREATE TABLE IF NOT EXISTS unscanned_objects (
 
 CREATE INDEX idx_unscanned_objects_lookup ON unscanned_objects(bucket_id, object_key);
 
+-- Scanned-Clean Objects Table (positive record: object was malware-scanned and
+-- came back clean, so the UI can show a "safe" icon). Absence of a row here AND
+-- in unscanned_objects = unknown (e.g. uploaded before scanning existed).
+CREATE TABLE IF NOT EXISTS scanned_clean_objects (
+  id SERIAL PRIMARY KEY,
+  bucket_id INTEGER NOT NULL REFERENCES buckets(id) ON DELETE CASCADE,
+  object_key TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(bucket_id, object_key)
+);
+
+CREATE INDEX idx_scanned_clean_objects_lookup ON scanned_clean_objects(bucket_id, object_key);
+
 -- Bucket Assignments Table (for sharing buckets between users)
 CREATE TABLE IF NOT EXISTS bucket_assignments (
   id SERIAL PRIMARY KEY,
