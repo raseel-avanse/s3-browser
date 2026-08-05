@@ -75,6 +75,15 @@ npm run build
 pm2 start npm --name "s3-browser" -- run start
 ```
 
+Or let `app.sh` handle the database and PM2 together:
+```bash
+./app.sh setup        # install + database + build + start (prod, port 3000)
+./app.sh start dev    # development mode on port 5000
+./app.sh status       # PM2 + database status
+./app.sh stop         # stop app and database
+./app.sh purge        # remove PM2 process, database data, .next, node_modules
+```
+
 Open [http://localhost:5000](http://localhost:5000)
 
 **Default login:** `admin` / `admin` (you'll be forced to change password)

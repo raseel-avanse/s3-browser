@@ -19,6 +19,12 @@ npm run typecheck    # tsc --noEmit
 
 npm run generate-keys # generate ENCRYPTION_KEY / secrets for .env
 
+# App lifecycle (PM2 + database, wraps db.sh)
+./app.sh setup [prod|dev]   # install + db setup + build + start (mode defaults to prod)
+./app.sh start|stop|restart|status|logs|build|migrate|seed|reset|purge [prod|dev]
+# prod = `next start` on 3000 (PM2 name "s3-browser")
+# dev  = `next dev` on 5000 (PM2 name "s3-browser-dev"); PORT env overrides either
+
 # Database (wraps docker-compose.db.yml: Postgres 16 + pgAdmin)
 ./db.sh setup        # start db + run migrations + seed (first-time setup)
 ./db.sh start|stop|status|logs|backup|restore|reset
