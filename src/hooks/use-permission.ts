@@ -9,7 +9,7 @@ export function usePermission() {
     canUpload: () => !isLoading && ['uploader', 'bucket-creator', 'admin'].includes(userRole),
     canCreateBucket: () => !isLoading && ['bucket-creator', 'admin'].includes(userRole),
     canCreateFolder: () => !isLoading && ['uploader', 'bucket-creator', 'admin'].includes(userRole),
-    canMove: () => !isLoading && ['uploader', 'admin'].includes(userRole),
+    canMove: () => !isLoading && ['uploader', 'bucket-creator', 'admin'].includes(userRole),
     canDelete: () => !isLoading && userRole === 'admin',
     canManageUsers: () => !isLoading && userRole === 'admin',
     canDownload: () => true,

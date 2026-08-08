@@ -18,7 +18,7 @@ export type MutationOp = 'create-folder' | 'move' | 'delete';
 
 const ALLOWED_ROLES: Record<MutationOp, string[]> = {
   'create-folder': ['uploader', 'bucket-creator', 'admin'],
-  move: ['uploader', 'admin'],
+  move: ['uploader', 'bucket-creator', 'admin'],
   delete: ['admin'],
 };
 

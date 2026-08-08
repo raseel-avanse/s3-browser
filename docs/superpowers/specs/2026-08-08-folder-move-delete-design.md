@@ -8,7 +8,7 @@ Branch: `feature/folder-move-delete`
 Add three object-management capabilities to the S3 browser:
 
 1. **Create folder** — bucket-creator, uploader, and admin roles.
-2. **Move files between folders** — uploader and admin roles.
+2. **Move files between folders** — bucket-creator, uploader, and admin roles.
 3. **Delete objects and folders** — admin role only.
 
 All three are mutating operations, so they introduce a server-side authorization
@@ -64,7 +64,7 @@ Behaviour:
 1. `getCurrentUser()` for the session-backed user.
 2. Map `op` to allowed global roles:
    - `create-folder`: `uploader`, `bucket-creator`, `admin`
-   - `move`: `uploader`, `admin`
+   - `move`: `uploader`, `bucket-creator`, `admin`
    - `delete`: `admin`
 3. Reject if the user's role is not in the allowed set.
 4. `getBucketById(Number(bucketId), user.id, user.role === 'admin')`, which
@@ -184,8 +184,8 @@ files only.
 S3 implements a move, not a grant of delete permission — an uploader gets no
 ability to remove an object except as the second half of a successful copy.
 
-`canMove()` allows `uploader` and `admin` only — deliberately not
-`bucket-creator`.
+`canMove()` allows `uploader`, `bucket-creator`, and `admin` — the same set as
+folder creation.
 
 ## Component 4: Delete (Admin Only)
 
