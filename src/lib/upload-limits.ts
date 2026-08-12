@@ -5,9 +5,9 @@
 
 export const DEFAULT_MAX_UPLOAD_SIZE = 10 * 1024 * 1024; // 10MB
 
-// Matches next.config.ts serverActions.bodySizeLimit (50mb). A per-bucket limit
+// Matches next.config.ts serverActions.bodySizeLimit (200mb). A per-bucket limit
 // above this could never actually be uploaded, so admin input is clamped here.
-export const MAX_CONFIGURABLE_UPLOAD_SIZE = 50 * 1024 * 1024;
+export const MAX_CONFIGURABLE_UPLOAD_SIZE = 200 * 1024 * 1024;
 
 /** Resolve the effective per-file limit for a bucket (falls back to the default). */
 export function effectiveMaxUploadSize(bucketMax?: number | null): number {

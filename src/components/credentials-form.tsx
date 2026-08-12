@@ -19,7 +19,7 @@ import { useToast } from "@/hooks/use-toast";
 import type { Bucket } from "@/context/BucketContext";
 
 // Max configurable per-bucket limit in MB (mirrors MAX_CONFIGURABLE_UPLOAD_SIZE).
-const MAX_UPLOAD_SIZE_MB = 50;
+const MAX_UPLOAD_SIZE_MB = 200;
 
 const formSchema = z.object({
   name: z.string().min(1, { message: "Bucket alias is required." }),

@@ -3,7 +3,7 @@ import type {NextConfig} from 'next';
 const nextConfig: NextConfig = {
   experimental: {
     serverActions: {
-      bodySizeLimit: '50mb', // Acceptable formats: '10mb', '500kb', or bytes as a number
+      bodySizeLimit: '200mb', // Acceptable formats: '10mb', '500kb', or bytes as a number
     },
   },
   /* config options here */
