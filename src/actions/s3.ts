@@ -1,6 +1,7 @@
 'use server';
 
 import { S3Client, ListObjectsV2Command, GetObjectCommand, ListObjectsV2CommandOutput, _Object, GetObjectCommandOutput, PutObjectCommand } from "@aws-sdk/client-s3";
+import { Upload } from "@aws-sdk/lib-storage";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { z } from "zod";
 import type { S3ClientConfig } from "@aws-sdk/client-s3";
@@ -358,15 +359,23 @@ export async function uploadObject(
             };
         }
 
-        const command = new PutObjectCommand({
-            Bucket: config.bucket,
-            Key: key,
-            Body: buffer,
-            ContentType: file.type || 'application/octet-stream',
-            ContentLength: file.size,
+        // Use lib-storage's Upload (not a plain PutObjectCommand) so the SDK
+        // always sees a definite content length/multipart upload — a bare
+        // PutObjectCommand can end up with the body treated as a stream of
+        // unknown length (logged as an SDK warning) depending on how the
+        // buffer was produced, and silently falls back to slower chunked
+        // transfer encoding.
+        const upload = new Upload({
+            client: s3Client,
+            params: {
+                Bucket: config.bucket,
+                Key: key,
+                Body: buffer,
+                ContentType: file.type || 'application/octet-stream',
+            },
         });
 
-        await s3Client.send(command);
+        await upload.done();
 
         // Track scan status so the browser can flag files. The unscanned and
         // clean records are mutually exclusive — a re-upload flips one to the
