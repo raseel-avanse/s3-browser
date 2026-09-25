@@ -5,6 +5,7 @@
 import bcrypt from 'bcrypt';
 import { query, transaction } from './db';
 import { createAuditLog } from './audit';
+import { ldapAuthenticate } from './ldap';
 
 const SALT_ROUNDS = 10;
 const SESSION_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
@@ -35,6 +36,8 @@ export interface Session {
 
 /**
  * Authenticate user with username and password
+ * Strategy: Try LDAP first (if enabled), then fall back to local bcrypt.
+ * If LDAP is unreachable or rejects, local bcrypt is tried next.
  */
 export async function authenticate(
   username: string,
@@ -65,8 +68,30 @@ export async function authenticate(
 
     const user = userResult.rows[0];
 
-    // Verify password
-    const passwordValid = await bcrypt.compare(password, user.password_hash);
+    // Try LDAP authentication first
+    const ldapResult = await ldapAuthenticate(username, password);
+
+    let passwordValid = false;
+    let authSource: 'ldap' | 'local' = 'ldap';
+
+    if (ldapResult.status === 'success') {
+      // LDAP succeeded
+      passwordValid = true;
+      authSource = 'ldap';
+    } else if (ldapResult.status === 'rejected' || ldapResult.status === 'unreachable') {
+      // LDAP failed or unreachable - fall back to local bcrypt
+      authSource = 'local';
+      const passwordValidBcrypt = await bcrypt.compare(password, user.password_hash);
+      passwordValid = passwordValidBcrypt;
+
+      // Log LDAP fallback details for unreachable case
+      if (ldapResult.status === 'unreachable') {
+        console.warn(`LDAP authentication unavailable, falling back to local for user ${username}: ${ldapResult.error}`);
+      }
+    } else {
+      // Unknown status - treat as failure, will fall through to null return
+      authSource = 'local';
+    }
 
     if (!passwordValid) {
       // Log failed attempt
@@ -75,7 +100,11 @@ export async function authenticate(
         username: user.username,
         action: 'login.failed',
         resource_type: 'auth',
-        details: { reason: 'invalid_password' },
+        details: {
+          reason: 'invalid_password',
+          auth_source: authSource,
+          reason: ldapResult.status === 'unreachable' ? 'ldap_unreachable' : undefined,
+        },
         ip_address: ipAddress,
         user_agent: userAgent,
         status: 'failure',
@@ -92,7 +121,7 @@ export async function authenticate(
       username: user.username,
       action: 'login.success',
       resource_type: 'auth',
-      details: { session_id: session.id },
+      details: { session_id: session.id, auth_source: authSource },
       ip_address: ipAddress,
       user_agent: userAgent,
       status: 'success',

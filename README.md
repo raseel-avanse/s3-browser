@@ -25,6 +25,10 @@ A modern, self-hosted S3 bucket browser built with Next.js 14. Browse, download,
 - 👥 **Role-based access** — Granular permissions per user role
 - 🚫 **Server-side only** — All AWS API calls run server-side; no credentials in browser
 
+### Authentication Options
+- 🔐 **Local authentication** — bcrypt password hashing (default)
+- 🔐 **Active Directory / LDAP** — Enterprise directory integration with LDAPS/StartTLS/plaintext support
+
 ## Tech Stack
 
 - **Framework:** Next.js 15 (App Router)
@@ -181,6 +185,17 @@ CLAMAV_SOCKET="/var/run/clamav/clamd.ctl"
 ```
 
 > **Docker note:** the Alpine app image does not include ClamAV. Run a ClamAV sidecar container and point `CLAMAV_HOST`/`CLAMAV_PORT` (or a shared socket) at it. Leaving `CLAMAV_ENABLED` unset means all uploads are treated as unscanned (fail-open).
+
+### Active Directory / LDAP Authentication
+
+Enterprise environments can authenticate users against Active Directory or any LDAP-compatible directory.
+
+- **LDAP-first, local fallback**: AD is tried first; if unavailable, local bcrypt is used
+- **Transport modes**: LDAPS (implicit TLS), StartTLS (plaintext then upgrade), or plaintext
+- **Admin-configurable**: All settings in Admin Settings page; persisted in database
+- **Pre-created users only**: AD validates credentials; user rows must exist locally
+
+See [LDAP_SETUP.md](docs/LDAP_SETUP.md) for detailed setup instructions.
 
 ## Architecture
 

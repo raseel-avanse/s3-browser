@@ -6,6 +6,7 @@ import { useEffect } from 'react';
 import { Loader2, Settings } from 'lucide-react';
 import { LogoUpload } from '@/components/logo-upload';
 import { BrandingSettings } from '@/components/branding-settings';
+import { LdapSettingsCard } from '@/components/ldap-settings';
 import { AppSidebar } from '@/components/app-sidebar';
 
 export default function AdminSettingsPage() {
@@ -31,6 +32,7 @@ export default function AdminSettingsPage() {
       <main className="p-6 md:p-10 max-w-3xl mx-auto space-y-8">
         <LogoUpload />
         <BrandingSettings />
+        <LdapSettingsCard />
       </main>
     </div>
   );
