@@ -1,0 +1,1 @@
+{"nodes": [{"id": "api_users_id_toggle_status_post", "label": "POST /api/users/[id]/toggle-status", "file_type": "code", "source_file": "src/app/api/users/[id]/toggle-status/route.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null}], "edges": [], "hyperedges": []}
